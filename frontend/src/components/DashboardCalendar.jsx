@@ -114,7 +114,7 @@ export default function DashboardCalendar() {
     for (let d = 1; d <= daysInMonth; d++) {
       // Create local date string YYYY-MM-DD avoiding timezone issues
       const dateStr = new Date(Date.UTC(year, month, d)).toISOString().split('T')[0];
-      const dayEvents = events.filter(e => e.date === dateStr);
+      const dayEvents = events.filter(e => e.date && (typeof e.date === 'string' ? e.date.split('T')[0] : new Date(e.date).toISOString().split('T')[0]) === dateStr);
       
       const isToday = dateStr === todayStr;
 
@@ -170,7 +170,7 @@ export default function DashboardCalendar() {
     }
   };
 
-  const selectedDayEvents = selectedDate ? events.filter(e => e.date === selectedDate) : [];
+  const selectedDayEvents = selectedDate ? events.filter(e => e.date && (typeof e.date === 'string' ? e.date.split('T')[0] : new Date(e.date).toISOString().split('T')[0]) === selectedDate) : [];
 
   return (
     <div className="glass-card p-3 sm:p-5 animate-fade-in relative">

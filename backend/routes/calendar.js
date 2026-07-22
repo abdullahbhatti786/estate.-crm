@@ -50,20 +50,23 @@ router.get('/events', async (req, res) => {
       }));
 
     // 3. Get Payments
-    const propertyIds = properties.map(p => p._id);
-    const payments = await PaymentInstallment.find({
-      property_id: { $in: propertyIds },
-      status: { $ne: 'Paid' }
-    }).populate('property_id', 'apartment_unit tenant_name owner_name');
-
-    const paymentEvents = payments.map(p => ({
-      id: `payment_${p._id}`,
-      title: `Rent Due: AED ${p.amount}`,
-      description: `Unit: ${p.property_id?.apartment_unit}\nTenant: ${p.property_id?.tenant_name || 'N/A'}\nStatus: ${p.status}`,
-      date: p.due_date,
-      type: 'Rent',
-      source: 'auto'
-    }));
+    const paymentEvents = [];
+    properties.forEach(p => {
+      if (p.payment_schedule && p.payment_schedule.length > 0) {
+        p.payment_schedule.forEach((installment, index) => {
+          if (installment.status !== 'Paid' && installment.due_date) {
+            paymentEvents.push({
+              id: `payment_${p._id}_${index}`,
+              title: `Rent Due: AED ${installment.amount}`,
+              description: `Unit: ${p.apartment_unit}\nTenant: ${p.tenant_name || 'N/A'}\nStatus: ${installment.status}`,
+              date: installment.due_date,
+              type: 'Rent',
+              source: 'auto'
+            });
+          }
+        });
+      }
+    });
 
     // 4. Get Lead Follow-ups
     const leads = await Lead.find(leadQuery);
