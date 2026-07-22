@@ -66,7 +66,8 @@ export default function Properties() {
       tenant_name: prop.tenant_name || '', tenant_phone: prop.tenant_phone || '', tenant_email: prop.tenant_email || '',
       apartment_unit: prop.apartment_unit || '', rent_amount: prop.rent_amount || '',
       security_deposit: prop.security_deposit || '',
-      lease_start: prop.lease_start || '', lease_end: prop.lease_end || '',
+      lease_start: prop.lease_start ? prop.lease_start.split('T')[0] : '',
+      lease_end: prop.lease_end ? prop.lease_end.split('T')[0] : '',
       payment_status: prop.payment_status || 'Pending',
       payment_schedule: [],
       images: prop.images || [],
@@ -252,13 +253,14 @@ export default function Properties() {
     { key: 'tenant_phone', header: 'Tenant Phone' },
     { key: 'rent_amount', header: 'Rent', render: (val) => <span className="font-medium text-accent">{formatAED(val)}</span> },
     { key: 'security_deposit', header: 'Deposit', render: (val) => <span className="text-text-secondary">{formatAED(val)}</span> },
-    { key: 'lease_start', header: 'Start', render: (val) => <span className="text-xs text-text-muted">{val || '—'}</span> },
+    { key: 'lease_start', header: 'Start', render: (val) => <span className="text-xs text-text-muted">{val ? val.split('T')[0] : '—'}</span> },
     { key: 'lease_end', header: 'End', render: (val) => {
       if (!val) return <span className="text-xs text-text-muted">—</span>;
+      const dateStr = val.split('T')[0];
       const days = Math.ceil((new Date(val) - new Date()) / (1000 * 60 * 60 * 24));
       return (
         <span className={`text-xs font-medium ${days <= 0 ? 'text-danger' : days <= 30 ? 'text-warning' : 'text-text-muted'}`}>
-          {val} {days <= 30 && days > 0 ? `(${days}d)` : days <= 0 ? '(Expired)' : ''}
+          {dateStr} {days <= 30 && days > 0 ? `(${days}d)` : days <= 0 ? '(Expired)' : ''}
         </span>
       );
     }},
