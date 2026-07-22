@@ -173,10 +173,10 @@ router.post('/confirm', async (req, res) => {
     let result;
     if (targetTable === 'leads') {
       const inserted = await Lead.insertMany(mappedRowsWithUser);
-      result = { insertedCount: inserted.length };
+      result = { inserted: inserted.length };
     } else if (targetTable === 'properties') {
       const inserted = await Property.insertMany(mappedRowsWithUser);
-      result = { insertedCount: inserted.length };
+      result = { inserted: inserted.length };
     } else {
       return res.status(400).json({ error: 'Invalid target table. Use "leads" or "properties".' });
     }

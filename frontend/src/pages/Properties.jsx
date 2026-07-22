@@ -30,6 +30,7 @@ export default function Properties() {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
 
   const fetchProperties = useCallback(async () => {
     setLoading(true);
@@ -231,7 +232,12 @@ export default function Properties() {
       render: (_, row) => (
         <div className="w-10 h-10 rounded-lg overflow-hidden bg-bg-elevated border border-border shrink-0 flex items-center justify-center">
           {row.images && row.images.length > 0 ? (
-            <img src={row.images[0].startsWith('http') ? row.images[0] : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${row.images[0]}`} alt="Property" className="w-full h-full object-cover" />
+            <img 
+              src={row.images[0].startsWith('http') ? row.images[0] : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${row.images[0]}`} 
+              alt="Property" 
+              className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setPreviewImage(row.images[0].startsWith('http') ? row.images[0] : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${row.images[0]}`)}
+            />
           ) : (
             <span className="text-xs text-text-muted">No Img</span>
           )}
@@ -417,16 +423,17 @@ export default function Properties() {
             <div className="flex flex-wrap gap-3 mb-3">
               {form.images && form.images.map((img, idx) => (
                 <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border group">
-                  <img src={img.startsWith('http') ? img : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${img}`} alt="Preview" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button type="button" onClick={() => handleDownloadImage(img)} title="Download" className="p-1 hover:bg-white/20 rounded">
+                  <img src={img.startsWith('http') ? img : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${img}`} alt="Preview" className="w-full h-full object-cover cursor-pointer" onClick={() => setPreviewImage(img.startsWith('http') ? img : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${img}`)} />
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); handleDownloadImage(img); }} title="Download" className="p-1 hover:bg-white/20 rounded pointer-events-auto">
                       <Download size={16} className="text-white" />
                     </button>
-                    <button type="button" onClick={() => {
+                    <button type="button" onClick={(e) => {
+                      e.stopPropagation();
                       const newImgs = [...form.images];
                       newImgs.splice(idx, 1);
                       setForm({ ...form, images: newImgs });
-                    }} title="Delete" className="p-1 hover:bg-white/20 rounded">
+                    }} title="Delete" className="p-1 hover:bg-white/20 rounded pointer-events-auto">
                       <Trash2 size={16} className="text-danger" />
                     </button>
                   </div>
@@ -551,6 +558,15 @@ export default function Properties() {
           </div>
         </form>
       </Modal>
+
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out"
+          onClick={() => setPreviewImage(null)}
+        >
+          <img src={previewImage} alt="Large Preview" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" />
+        </div>
+      )}
     </div>
   );
 }
