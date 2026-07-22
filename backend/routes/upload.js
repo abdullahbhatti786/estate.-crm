@@ -196,8 +196,8 @@ router.get('/export/:table', async (req, res) => {
     let data, columns, sheetName;
 
     if (table === 'leads') {
-      const result = Lead.getAll({ limit: 10000 });
-      data = result.leads;
+      const dbData = await Lead.find({ is_deleted: 0 }).limit(10000).lean();
+      data = dbData.map(d => ({ ...d, id: d._id.toString() }));
       sheetName = 'Sales Pipeline';
       columns = [
         { header: 'ID', key: 'id', width: 8 },
@@ -210,8 +210,8 @@ router.get('/export/:table', async (req, res) => {
         { header: 'Created At', key: 'created_at', width: 22 }
       ];
     } else if (table === 'properties') {
-      const result = Property.getAll({ limit: 10000 });
-      data = result.properties;
+      const dbData = await Property.find({ is_deleted: 0 }).limit(10000).lean();
+      data = dbData.map(d => ({ ...d, id: d._id.toString() }));
       sheetName = 'Property Management';
       columns = [
         { header: 'ID', key: 'id', width: 8 },

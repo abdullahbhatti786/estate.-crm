@@ -412,7 +412,7 @@ export default function Properties() {
             <div className="flex flex-wrap gap-3 mb-3">
               {form.images && form.images.map((img, idx) => (
                 <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border group">
-                  <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${img}`} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={img.startsWith('http') ? img : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${img}`} alt="Preview" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button type="button" onClick={() => handleDownloadImage(img)} title="Download" className="p-1 hover:bg-white/20 rounded">
                       <Download size={16} className="text-white" />
