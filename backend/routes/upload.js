@@ -7,13 +7,44 @@ const { parseExcelFile, generateExcelExport } = require('../services/excelParser
 const Lead = require('../models/Lead');
 const Property = require('../models/Property');
 
+// Cloudinary integration
+const { v2: cloudinary } = require('cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
 const router = express.Router();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
+// ----------------- STORAGE CONFIGURATIONS -----------------
+
+// 1. Storage for Images (Cloudinary)
+const imageStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'estate-crm/images',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp']
+  }
+});
+
+// 2. Storage for Documents (Cloudinary)
+const documentStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'estate-crm/documents',
+    resource_type: 'auto',
+    allowed_formats: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx']
+  }
+});
+
+// 3. Storage for Excel parsing (Temporary local storage on Vercel)
+const excelStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '..', 'uploads');
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+    // Vercel serverless functions only allow writing to /tmp
+    const uploadDir = '/tmp';
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
@@ -23,8 +54,10 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({
-  storage,
+// ----------------- UPLOAD MIDDLEWARES -----------------
+
+const excelUpload = multer({
+  storage: excelStorage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
   fileFilter: (req, file, cb) => {
     const allowedExts = ['.xlsx', '.xls', '.csv'];
@@ -38,54 +71,34 @@ const upload = multer({
 });
 
 const imageUpload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-  fileFilter: (req, file, cb) => {
-    const allowedExts = ['.jpg', '.jpeg', '.png', '.webp'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (allowedExts.includes(ext)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only JPG, PNG, and WebP images are allowed'));
-    }
-  }
+  storage: imageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB max
 });
 
 const documentUpload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max for docs
-  fileFilter: (req, file, cb) => {
-    const allowedExts = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (allowedExts.includes(ext)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only PDF, Word, JPG, and PNG documents are allowed'));
-    }
-  }
+  storage: documentStorage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
 });
 
-// POST /api/upload/image — Upload single image and return URL
+// ----------------- ROUTES -----------------
+
+// POST /api/upload/image — Upload single image and return Cloudinary URL
 router.post('/image', imageUpload.single('image'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No image uploaded' });
     }
     
-    // Create URL path for frontend to access (e.g. /uploads/filename.jpg)
-    const imageUrl = `/uploads/${req.file.filename}`;
-    
     res.json({
       success: true,
-      imageUrl
+      imageUrl: req.file.path // Cloudinary URL
     });
   } catch (err) {
-    if (req.file) fs.unlinkSync(req.file.path);
     res.status(400).json({ error: err.message });
   }
 });
 
-// POST /api/upload/document — Upload single document and return URL + Name
+// POST /api/upload/document — Upload single document and return Cloudinary URL
 router.post('/document', documentUpload.single('document'), (req, res) => {
   try {
     if (!req.file) {
@@ -94,17 +107,16 @@ router.post('/document', documentUpload.single('document'), (req, res) => {
     
     res.json({
       success: true,
-      documentUrl: `/uploads/${req.file.filename}`,
+      documentUrl: req.file.path, // Cloudinary URL
       documentName: req.file.originalname
     });
   } catch (err) {
-    if (req.file) fs.unlinkSync(req.file.path);
     res.status(400).json({ error: err.message });
   }
 });
 
 // POST /api/upload/excel — Upload and parse file, return headers + preview
-router.post('/excel', upload.single('file'), async (req, res) => {
+router.post('/excel', excelUpload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -121,8 +133,7 @@ router.post('/excel', upload.single('file'), async (req, res) => {
       totalRows: result.totalRows
     });
   } catch (err) {
-    // Clean up file on error
-    if (req.file) fs.unlinkSync(req.file.path);
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     res.status(400).json({ error: err.message });
   }
 });
@@ -136,10 +147,11 @@ router.post('/confirm', async (req, res) => {
       return res.status(400).json({ error: 'fileId, targetTable, and mapping are required' });
     }
 
-    // Find the uploaded file
-    const uploadDir = path.join(__dirname, '..', 'uploads');
+    // Find the uploaded file in /tmp
+    const uploadDir = '/tmp';
     const files = fs.readdirSync(uploadDir);
     const file = files.find(f => f.startsWith(fileId));
+    
     if (!file) {
       return res.status(404).json({ error: 'Uploaded file not found. Please re-upload.' });
     }
@@ -166,7 +178,7 @@ router.post('/confirm', async (req, res) => {
     }
 
     // Clean up uploaded file
-    fs.unlinkSync(filePath);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
     res.json({
       success: true,
