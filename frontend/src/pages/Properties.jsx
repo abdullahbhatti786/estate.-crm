@@ -169,7 +169,15 @@ export default function Properties() {
   };
 
   const handleDownloadImage = async (url) => {
-    const fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${url}`;
+    let fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${url}`;
+    
+    // Cloudinary download fix (forces native download and bypasses CORS/401 for PDFs)
+    if (fullUrl.includes('res.cloudinary.com') && fullUrl.includes('/upload/')) {
+      fullUrl = fullUrl.replace('/upload/', '/upload/fl_attachment/');
+      window.open(fullUrl, '_blank');
+      return;
+    }
+
     try {
       const response = await fetch(fullUrl);
       if (!response.ok) throw new Error('Network response was not ok');
