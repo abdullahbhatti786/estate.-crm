@@ -11,6 +11,7 @@ const { authMiddleware } = require('./middleware/auth');
 initializeDatabase();
 
 const app = express();
+app.set('trust proxy', 1); // Trust Vercel load balancer for secure cookies
 const PORT = process.env.PORT || 5000;
 
 // Mongo session store
