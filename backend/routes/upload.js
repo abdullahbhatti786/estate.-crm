@@ -168,11 +168,15 @@ router.post('/confirm', async (req, res) => {
       return mapped;
     });
 
+    const mappedRowsWithUser = mappedRows.map(r => ({ ...r, created_by: req.session.user?.id }));
+
     let result;
     if (targetTable === 'leads') {
-      result = Lead.bulkCreate(mappedRows, req.session.user?.id);
+      const inserted = await Lead.insertMany(mappedRowsWithUser);
+      result = { insertedCount: inserted.length };
     } else if (targetTable === 'properties') {
-      result = Property.bulkCreate(mappedRows, req.session.user?.id);
+      const inserted = await Property.insertMany(mappedRowsWithUser);
+      result = { insertedCount: inserted.length };
     } else {
       return res.status(400).json({ error: 'Invalid target table. Use "leads" or "properties".' });
     }
@@ -229,8 +233,22 @@ router.get('/export/:table', async (req, res) => {
         { header: 'Payment Status', key: 'payment_status', width: 16 },
         { header: 'Created At', key: 'created_at', width: 22 }
       ];
+    } else if (table === 'inventory') {
+      const dbData = await Property.find({ is_deleted: 0, property_status: 'Available' }).limit(10000).lean();
+      data = dbData.map(d => ({ ...d, id: d._id.toString() }));
+      sheetName = 'Inventory';
+      columns = [
+        { header: 'ID', key: 'id', width: 8 },
+        { header: 'Owner Name', key: 'owner_name', width: 22 },
+        { header: 'Owner Phone', key: 'owner_phone', width: 18 },
+        { header: 'Owner Email', key: 'owner_email', width: 25 },
+        { header: 'Apartment/Unit', key: 'apartment_unit', width: 18 },
+        { header: 'Asking Rent (AED)', key: 'rent_amount', width: 14 },
+        { header: 'Deposit (AED)', key: 'security_deposit', width: 22 },
+        { header: 'Listed On', key: 'created_at', width: 22 }
+      ];
     } else {
-      return res.status(400).json({ error: 'Invalid table. Use "leads" or "properties".' });
+      return res.status(400).json({ error: 'Invalid table. Use "leads", "properties", or "inventory".' });
     }
 
     const workbook = await generateExcelExport(data, columns, sheetName);

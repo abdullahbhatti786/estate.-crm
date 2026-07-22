@@ -265,11 +265,14 @@ export default function Properties() {
       );
     }},
     { key: 'payment_status', header: 'Payment', render: (val, row) => {
-      if (row.total_installments > 0) {
-        const isAllPaid = row.paid_installments === row.total_installments;
+      const schedule = row.payment_schedule || [];
+      if (schedule.length > 0) {
+        const total = schedule.length;
+        const paid = schedule.filter(p => p.status === 'Paid').length;
+        const isAllPaid = paid === total;
         return (
           <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium border ${isAllPaid ? 'bg-success/10 text-success border-success/20' : 'bg-warning/10 text-warning border-warning/20'}`}>
-            {row.paid_installments} / {row.total_installments} Paid
+            {paid} / {total} Paid
           </span>
         );
       }

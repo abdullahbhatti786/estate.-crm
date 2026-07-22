@@ -121,20 +121,24 @@ export default function Inventory() {
     }
   };
 
-  const handleDownloadImage = async (imgUrl) => {
+  const handleDownloadImage = async (url) => {
+    const fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${url}`;
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${imgUrl}`);
+      const response = await fetch(fullUrl);
+      if (!response.ok) throw new Error('Network response was not ok');
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = url;
-      link.download = imgUrl.split('/').pop() || 'property-image.jpg';
+      link.href = blobUrl;
+      const filename = url.split('/').pop() || 'document';
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      toast('Failed to download image', 'error');
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Download failed, falling back to new tab', err);
+      window.open(fullUrl, '_blank');
     }
   };
 
@@ -180,7 +184,7 @@ export default function Inventory() {
       render: (_, row) => (
         <div className="w-10 h-10 rounded-lg overflow-hidden bg-bg-elevated border border-border shrink-0 flex items-center justify-center">
           {row.images && row.images.length > 0 ? (
-            <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${row.images[0]}`} alt="Property" className="w-full h-full object-cover" />
+            <img src={row.images[0].startsWith('http') ? row.images[0] : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${row.images[0]}`} alt="Property" className="w-full h-full object-cover" />
           ) : (
             <span className="text-xs text-text-muted">No Img</span>
           )}
@@ -213,6 +217,10 @@ export default function Inventory() {
           <p className="text-sm text-text-muted mt-1">Manage available properties for rent</p>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => window.open('/api/upload/export/inventory', '_blank')}
+            className="flex items-center gap-2 px-4 py-2.5 bg-bg-surface border border-border rounded-lg text-sm font-medium text-text-primary hover:bg-bg-hover transition-all">
+            <Download size={16} /><span className="hidden sm:inline">Export</span>
+          </button>
           <button id="add-inventory-btn" onClick={openCreate}
             className="flex items-center gap-2 px-5 py-2.5 bg-accent text-bg-primary font-bold rounded-lg hover:bg-accent-hover transition-all duration-300">
             <Plus size={16} /><span>Add to Inventory</span>
@@ -285,7 +293,7 @@ export default function Inventory() {
             <div className="flex flex-wrap gap-3 mb-3">
               {form.images && form.images.map((img, idx) => (
                 <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border group">
-                  <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${img}`} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={img.startsWith('http') ? img : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${img}`} alt="Preview" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button type="button" onClick={() => handleDownloadImage(img)} title="Download" className="p-1 hover:bg-white/20 rounded">
                       <Download size={16} className="text-white" />
