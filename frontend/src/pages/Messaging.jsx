@@ -104,7 +104,13 @@ export default function Messaging() {
   };
 
   const handleCopyDraft = () => {
-    setMessage(aiDraft);
+    let draftText = aiDraft;
+    const subjectMatch = draftText.match(/^Subject:\s*(.*)/i);
+    if (subjectMatch) {
+      setSubject(subjectMatch[1].trim());
+      draftText = draftText.replace(/^Subject:\s*(.*)\n*/i, '').trim();
+    }
+    setMessage(draftText);
     toast('Draft copied to composer', 'success');
   };
 

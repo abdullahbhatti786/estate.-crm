@@ -3,7 +3,8 @@ import api from '../services/api';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import StatsCard from '../components/StatsCard';
-import { Send, AlertTriangle, CheckCircle } from 'lucide-react';
+import Modal from '../components/Modal';
+import { Send, AlertTriangle, CheckCircle, Eye } from 'lucide-react';
 
 export default function MessageLogs() {
   const [logs, setLogs] = useState([]);
@@ -13,6 +14,7 @@ export default function MessageLogs() {
   const [channelFilter, setChannelFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [viewMessage, setViewMessage] = useState(null);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -43,7 +45,12 @@ export default function MessageLogs() {
       </span>
     )},
     { key: 'message', header: 'Message', render: (val) => (
-      <span className="max-w-[250px] truncate block text-text-secondary text-xs">{val}</span>
+      <div className="flex items-center gap-2">
+        <span className="max-w-[200px] truncate block text-text-secondary text-xs">{val}</span>
+        <button onClick={() => setViewMessage(val)} className="flex items-center gap-1 text-[10px] bg-bg-elevated px-2 py-1 rounded hover:bg-accent/20 hover:text-accent transition-colors font-medium border border-border/50">
+          <Eye size={12} /> View
+        </button>
+      </div>
     )},
     { key: 'status', header: 'Status', render: (val) => <StatusBadge status={val} /> },
     { key: 'error_message', header: 'Error', render: (val) => val ? (
@@ -104,6 +111,15 @@ export default function MessageLogs() {
         loading={loading}
         emptyMessage="No messages sent yet"
       />
+
+      <Modal isOpen={!!viewMessage} onClose={() => setViewMessage(null)} title="Full Message" maxWidth="max-w-xl">
+        <div className="p-4 bg-bg-elevated rounded-xl text-sm whitespace-pre-wrap text-text-primary border border-border/50 max-h-[60vh] overflow-y-auto leading-relaxed">
+          {viewMessage}
+        </div>
+        <div className="flex justify-end mt-4">
+          <button onClick={() => setViewMessage(null)} className="px-4 py-2 bg-bg-surface border border-border rounded-lg hover:bg-bg-hover transition-colors text-sm font-medium">Close</button>
+        </div>
+      </Modal>
     </div>
   );
 }
