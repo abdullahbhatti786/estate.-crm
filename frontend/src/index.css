@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/* ========================================
+   ESTATE CRM — Dark Theme Design System
+   ======================================== */
+
+@theme {
+  --color-bg-primary: #121214;
+  --color-bg-surface: #18181b;
+  --color-bg-elevated: #1e1e24;
+  --color-bg-hover: #27272a;
+  --color-border: #27272a;
+  --color-border-light: #3f3f46;
+  --color-text-primary: #f4f4f5;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+  
+  --color-accent: #0cd69b;
+  --color-accent-hover: #12e3a7;
+  --color-accent-dim: rgba(12, 214, 155, 0.1);
+  --color-accent-glow: rgba(12, 214, 155, 0.25);
+  
+  --color-danger: #ef4444;
+  --color-danger-dim: rgba(239, 68, 68, 0.1);
+  --color-warning: #f59e0b;
+  --color-warning-dim: rgba(245, 158, 11, 0.1);
+  --color-success: #10b981;
+  --color-success-dim: rgba(16, 185, 129, 0.1);
+  --color-info: #3b82f6;
+  --color-info-dim: rgba(59, 130, 246, 0.1);
+  --color-purple: #8b5cf6;
+  --color-purple-dim: rgba(139, 92, 246, 0.1);
+}
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
+
+/* Base styles handled by Tailwind preflight */
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-light);
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 212, 170, 0.2); }
+  50% { box-shadow: 0 0 0 8px rgba(0, 212, 170, 0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+/* Stagger children */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeIn 0.4s ease-out forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+
+/* ========================================
+   FORM ELEMENTS
+   ======================================== */
+
+input, select, textarea {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Number input arrows removal */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ========================================
+   GLASS MORPHISM CARD
+   ======================================== */
+
+.glass-card {
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+/* ========================================
+   TOAST NOTIFICATIONS
+   ======================================== */
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
+}
