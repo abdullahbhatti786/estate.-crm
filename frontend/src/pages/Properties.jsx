@@ -231,7 +231,7 @@ export default function Properties() {
       render: (_, row) => (
         <div className="w-10 h-10 rounded-lg overflow-hidden bg-bg-elevated border border-border shrink-0 flex items-center justify-center">
           {row.images && row.images.length > 0 ? (
-            <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${row.images[0]}`} alt="Property" className="w-full h-full object-cover" />
+            <img src={row.images[0].startsWith('http') ? row.images[0] : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${row.images[0]}`} alt="Property" className="w-full h-full object-cover" />
           ) : (
             <span className="text-xs text-text-muted">No Img</span>
           )}

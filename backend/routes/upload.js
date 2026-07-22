@@ -214,7 +214,7 @@ router.get('/export/:table', async (req, res) => {
         { header: 'Created At', key: 'created_at', width: 22 }
       ];
     } else if (table === 'properties') {
-      const dbData = await Property.find({ is_deleted: 0 }).limit(10000).lean();
+      const dbData = await Property.find({ is_deleted: 0, property_status: 'Rented' }).limit(10000).lean();
       data = dbData.map(d => ({ ...d, id: d._id.toString() }));
       sheetName = 'Property Management';
       columns = [
