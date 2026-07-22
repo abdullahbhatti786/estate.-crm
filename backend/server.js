@@ -14,7 +14,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Mongo session store
-const MongoStore = require('connect-mongo').default;
+const ConnectMongo = require('connect-mongo');
+const MongoStore = ConnectMongo.default || ConnectMongo.MongoStore || ConnectMongo;
 
 // Middleware
 app.use(cors({
