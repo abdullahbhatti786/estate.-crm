@@ -171,20 +171,11 @@ export default function Properties() {
   const handleDownloadImage = async (url) => {
     let fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${url}`;
     
-    // Cloudinary download fix (use backend to generate a signed URL)
+    // Cloudinary download fix (use backend proxy to bypass CORS and force native download)
     if (fullUrl.includes('res.cloudinary.com')) {
       fullUrl = fullUrl.replace('/fl_attachment', '');
-      try {
-        const response = await api.get(`/upload/download-signed?url=${encodeURIComponent(fullUrl)}`);
-        if (response.data.signedUrl) {
-          window.open(response.data.signedUrl, '_blank');
-        } else {
-          throw new Error('No signed URL returned');
-        }
-      } catch (err) {
-        console.error('Signed download failed', err);
-        window.open(fullUrl, '_blank');
-      }
+      const proxyUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/proxy-download?url=${encodeURIComponent(fullUrl)}`;
+      window.open(proxyUrl, '_blank');
       return;
     }
 

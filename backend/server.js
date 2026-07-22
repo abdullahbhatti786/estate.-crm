@@ -54,7 +54,28 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
 }
 
-// API Routes
+// Public API Routes
+app.get('/api/proxy-download', (req, res) => {
+  const fileUrl = req.query.url;
+  if (!fileUrl || !fileUrl.includes('res.cloudinary.com')) {
+    return res.status(400).json({ error: 'Valid Cloudinary URL is required' });
+  }
+
+  const https = require('https');
+  https.get(fileUrl, (response) => {
+    if (response.statusCode !== 200) {
+      return res.status(response.statusCode).json({ error: 'Failed to download file' });
+    }
+    const filename = fileUrl.split('/').pop() || 'download';
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
+    response.pipe(res);
+  }).on('error', (err) => {
+    res.status(500).json({ error: err.message });
+  });
+});
+
+// Protected API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/leads', authMiddleware, require('./routes/leads'));
 app.use('/api/properties', authMiddleware, require('./routes/properties'));
