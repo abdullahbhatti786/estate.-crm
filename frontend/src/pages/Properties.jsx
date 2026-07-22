@@ -175,8 +175,22 @@ export default function Properties() {
     if (fullUrl.includes('res.cloudinary.com')) {
       // Remove fl_attachment if it was added previously, as it causes 401s on strict accounts
       fullUrl = fullUrl.replace('/fl_attachment', '');
-      const proxyUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/upload/proxy-download?url=${encodeURIComponent(fullUrl)}`;
-      window.open(proxyUrl, '_blank');
+      try {
+        const response = await api.get(`/upload/proxy-download?url=${encodeURIComponent(fullUrl)}`, { responseType: 'blob' });
+        const blob = new Blob([response.data]);
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        const filename = fullUrl.split('/').pop() || 'document';
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      } catch (err) {
+        console.error('Proxy download failed', err);
+        window.open(fullUrl, '_blank');
+      }
       return;
     }
 
