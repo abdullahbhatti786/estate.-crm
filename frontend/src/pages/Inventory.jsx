@@ -125,10 +125,12 @@ export default function Inventory() {
   const handleDownloadImage = async (url) => {
     let fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${url}`;
     
-    // Cloudinary download fix (forces native download and bypasses CORS/401 for PDFs)
-    if (fullUrl.includes('res.cloudinary.com') && fullUrl.includes('/upload/')) {
-      fullUrl = fullUrl.replace('/upload/', '/upload/fl_attachment/');
-      window.open(fullUrl, '_blank');
+    // Cloudinary download fix (use backend proxy to bypass CORS and force native download)
+    if (fullUrl.includes('res.cloudinary.com')) {
+      // Remove fl_attachment if it was added previously, as it causes 401s on strict accounts
+      fullUrl = fullUrl.replace('/fl_attachment', '');
+      const proxyUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/upload/proxy-download?url=${encodeURIComponent(fullUrl)}`;
+      window.open(proxyUrl, '_blank');
       return;
     }
 

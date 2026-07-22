@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
 const { v4: uuidv4 } = require('uuid');
 const { parseExcelFile, generateExcelExport } = require('../services/excelParser');
 const Lead = require('../models/Lead');
@@ -261,6 +262,24 @@ router.get('/export/:table', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// GET /api/upload/proxy-download?url=...
+router.get('/proxy-download', (req, res) => {
+  const fileUrl = req.query.url;
+  if (!fileUrl) return res.status(400).json({ error: 'URL is required' });
+
+  https.get(fileUrl, (response) => {
+    if (response.statusCode !== 200) {
+      return res.status(response.statusCode).json({ error: 'Failed to download file' });
+    }
+    const filename = fileUrl.split('/').pop() || 'download';
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
+    response.pipe(res);
+  }).on('error', (err) => {
+    res.status(500).json({ error: err.message });
+  });
 });
 
 module.exports = router;
