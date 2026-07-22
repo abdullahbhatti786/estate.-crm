@@ -264,22 +264,39 @@ router.get('/export/:table', async (req, res) => {
   }
 });
 
-// GET /api/upload/proxy-download?url=...
-router.get('/proxy-download', (req, res) => {
-  const fileUrl = req.query.url;
-  if (!fileUrl) return res.status(400).json({ error: 'URL is required' });
-
-  https.get(fileUrl, (response) => {
-    if (response.statusCode !== 200) {
-      return res.status(response.statusCode).json({ error: 'Failed to download file' });
+// GET /api/upload/download-signed?url=...
+router.get('/download-signed', (req, res) => {
+  try {
+    const fileUrl = req.query.url;
+    if (!fileUrl || !fileUrl.includes('res.cloudinary.com')) {
+      return res.status(400).json({ error: 'Valid Cloudinary URL is required' });
     }
-    const filename = fileUrl.split('/').pop() || 'download';
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
-    response.pipe(res);
-  }).on('error', (err) => {
+
+    const uploadIndex = fileUrl.indexOf('/upload/');
+    if (uploadIndex === -1) return res.status(400).json({ error: 'Invalid Cloudinary URL format' });
+
+    let pathAfterUpload = fileUrl.substring(uploadIndex + 8);
+    // Remove version like v1234567/
+    if (pathAfterUpload.match(/^v\d+\//)) {
+      pathAfterUpload = pathAfterUpload.replace(/^v\d+\//, '');
+    }
+
+    // Determine resource type from URL
+    const resourceType = fileUrl.includes('/raw/upload/') ? 'raw' : 
+                        fileUrl.includes('/video/upload/') ? 'video' : 'image';
+
+    // Generate signed URL with attachment flag
+    const signedUrl = cloudinary.utils.url(pathAfterUpload, {
+      resource_type: resourceType,
+      secure: true,
+      sign_url: true,
+      flags: 'attachment'
+    });
+
+    res.json({ signedUrl });
+  } catch (err) {
     res.status(500).json({ error: err.message });
-  });
+  }
 });
 
 module.exports = router;

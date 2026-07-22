@@ -125,24 +125,18 @@ export default function Inventory() {
   const handleDownloadImage = async (url) => {
     let fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${url}`;
     
-    // Cloudinary download fix (use backend proxy to bypass CORS and force native download)
+    // Cloudinary download fix (use backend to generate a signed URL)
     if (fullUrl.includes('res.cloudinary.com')) {
-      // Remove fl_attachment if it was added previously, as it causes 401s on strict accounts
       fullUrl = fullUrl.replace('/fl_attachment', '');
       try {
-        const response = await api.get(`/upload/proxy-download?url=${encodeURIComponent(fullUrl)}`, { responseType: 'blob' });
-        const blob = new Blob([response.data]);
-        const blobUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        const filename = fullUrl.split('/').pop() || 'document';
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode.removeChild(link);
-        window.URL.revokeObjectURL(blobUrl);
+        const response = await api.get(`/upload/download-signed?url=${encodeURIComponent(fullUrl)}`);
+        if (response.data.signedUrl) {
+          window.open(response.data.signedUrl, '_blank');
+        } else {
+          throw new Error('No signed URL returned');
+        }
       } catch (err) {
-        console.error('Proxy download failed', err);
+        console.error('Signed download failed', err);
         window.open(fullUrl, '_blank');
       }
       return;
