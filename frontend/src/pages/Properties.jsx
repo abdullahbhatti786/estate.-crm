@@ -6,7 +6,8 @@ import StatusBadge from '../components/StatusBadge';
 import { toast } from '../components/Toast';
 import { Plus, Pencil, Trash2, Download, FileText } from 'lucide-react';
 
-const PAYMENT_STATUSES = ['Paid', 'Pending', 'Overdue'];
+const PAYMENT_STATUSES = ['Pending', 'Paid', 'Overdue'];
+const PROPERTY_STATUSES = ['Available', 'Rented', 'Maintenance'];
 
 const emptyProperty = {
   owner_name: '', owner_phone: '', owner_email: '',

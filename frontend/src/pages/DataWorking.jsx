@@ -2,8 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import DataTable from '../components/DataTable';
 import { toast } from '../components/Toast';
-import { ArrowRightLeft } from 'lucide-react';
+import { ArrowRightLeft, Pencil, Trash2 } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
+import Modal from '../components/Modal';
+import LeadForm from '../components/LeadForm';
+import PropertyForm from '../components/PropertyForm';
 
 import { FileText } from 'lucide-react';
 
@@ -106,6 +109,8 @@ export default function DataWorking() {
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState([]);
   const [transferring, setTransferring] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingData, setEditingData] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -166,6 +171,23 @@ export default function DataWorking() {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this record?')) return;
+    try {
+      const endpoint = activeTab === 'sales' ? `/leads/${id}` : `/properties/${id}`;
+      await api.delete(endpoint);
+      toast('Record deleted', 'success');
+      fetchData();
+    } catch (err) {
+      toast('Failed to delete', 'error');
+    }
+  };
+
+  const openEdit = (row) => {
+    setEditingData(row);
+    setModalOpen(true);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -220,7 +242,29 @@ export default function DataWorking() {
         selectable={true}
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
+        actions={(row) => (
+          <div className="flex items-center gap-1 justify-end">
+            <button onClick={() => openEdit(row)} className="p-2 rounded-lg text-text-muted hover:text-accent hover:bg-accent-dim transition-all"><Pencil size={15} /></button>
+            <button onClick={() => handleDelete(row.id || row._id)} className="p-2 rounded-lg text-text-muted hover:text-danger hover:bg-danger-dim transition-all"><Trash2 size={15} /></button>
+          </div>
+        )}
       />
+
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={`Edit ${activeTab === 'sales' ? 'Lead' : 'Property'}`} maxWidth={activeTab === 'properties' ? 'max-w-3xl' : 'max-w-xl'}>
+        {activeTab === 'sales' ? (
+          <LeadForm 
+            initialData={editingData} 
+            onCancel={() => setModalOpen(false)} 
+            onSave={() => { setModalOpen(false); fetchData(); }} 
+          />
+        ) : (
+          <PropertyForm 
+            initialData={editingData} 
+            onCancel={() => setModalOpen(false)} 
+            onSave={() => { setModalOpen(false); fetchData(); }} 
+          />
+        )}
+      </Modal>
     </div>
   );
 }
