@@ -165,6 +165,7 @@ router.get('/integrations', authMiddleware, async (req, res) => {
     
     // We return whether the password/token is set, not the actual value for security
     res.json({
+      gmail_sender_name: user.gmail_sender_name || user.full_name || '',
       gmail_email: user.gmail_email || '',
       has_gmail_password: !!user.gmail_app_password,
       whatsapp_phone_number_id: user.whatsapp_phone_number_id || '',
@@ -178,9 +179,10 @@ router.get('/integrations', authMiddleware, async (req, res) => {
 // PUT /api/auth/integrations
 router.put('/integrations', authMiddleware, async (req, res) => {
   try {
-    const { gmail_email, gmail_app_password, whatsapp_phone_number_id, whatsapp_access_token } = req.body;
+    const { gmail_sender_name, gmail_email, gmail_app_password, whatsapp_phone_number_id, whatsapp_access_token } = req.body;
     
     const updateData = {};
+    if (gmail_sender_name !== undefined) updateData.gmail_sender_name = gmail_sender_name;
     if (gmail_email !== undefined) updateData.gmail_email = gmail_email;
     if (gmail_app_password) updateData.gmail_app_password = gmail_app_password; // only update if provided
     if (whatsapp_phone_number_id !== undefined) updateData.whatsapp_phone_number_id = whatsapp_phone_number_id;

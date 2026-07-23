@@ -7,6 +7,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
+  const [gmailSenderName, setGmailSenderName] = useState('');
   const [gmailEmail, setGmailEmail] = useState('');
   const [gmailPassword, setGmailPassword] = useState('');
   const [hasGmailPassword, setHasGmailPassword] = useState(false);
@@ -22,6 +23,7 @@ export default function Settings() {
   const fetchIntegrations = async () => {
     try {
       const res = await api.get('/auth/integrations');
+      setGmailSenderName(res.data.gmail_sender_name || '');
       setGmailEmail(res.data.gmail_email || '');
       setHasGmailPassword(res.data.has_gmail_password);
       setWhatsappPhoneId(res.data.whatsapp_phone_number_id || '');
@@ -38,6 +40,7 @@ export default function Settings() {
     setSaving(true);
     try {
       const payload = {
+        gmail_sender_name: gmailSenderName,
         gmail_email: gmailEmail,
         whatsapp_phone_number_id: whatsappPhoneId
       };
@@ -83,6 +86,17 @@ export default function Settings() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">Sender Name (Optional)</label>
+              <input 
+                type="text" 
+                value={gmailSenderName} 
+                onChange={(e) => setGmailSenderName(e.target.value)} 
+                className={inputClass} 
+                placeholder="e.g. John Doe - Real Estate" 
+              />
+              <p className="text-[10px] text-text-muted mt-1">This name will appear as the sender instead of your raw email address.</p>
+            </div>
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1.5">Gmail Address</label>
               <input 

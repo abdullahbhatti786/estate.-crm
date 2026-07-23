@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   role: { type: String, required: true, default: 'agent' },
   is_active: { type: Number, required: true, default: 1 },
   // Integrations
+  gmail_sender_name: { type: String },
   gmail_email: { type: String },
   gmail_app_password: { type: String },
   whatsapp_access_token: { type: String },

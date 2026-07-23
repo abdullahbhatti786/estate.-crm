@@ -6,7 +6,7 @@ const nodemailer = require('nodemailer');
 
 class EmailService {
   async sendEmail(to, subject, body, attachments = [], credentials = {}) {
-    const { email, password } = credentials;
+    const { email, password, senderName } = credentials;
     const isConfigured = email && password;
     if (!isConfigured) {
       console.log(`📧 [DUMMY Email] Would send to ${to}: Subject="${subject}"`);
@@ -24,7 +24,7 @@ class EmailService {
       });
 
       const mailOptions = {
-        from: `"Real Estate CRM" <${email}>`,
+        from: `"${senderName || 'Real Estate CRM'}" <${email}>`,
         to,
         subject,
         text: body, // plaintext body

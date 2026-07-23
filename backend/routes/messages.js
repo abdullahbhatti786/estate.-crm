@@ -91,6 +91,7 @@ router.post('/email', async (req, res) => {
 
     const user = await User.findById(req.session.user.id);
     const credentials = {
+      senderName: user.gmail_sender_name || user.full_name,
       email: user.gmail_email,
       password: user.gmail_app_password
     };
