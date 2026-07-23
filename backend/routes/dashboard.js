@@ -108,6 +108,7 @@ router.get('/notifications', async (req, res) => {
     const notifications = [];
 
     let leadQuery = { is_deleted: 0 };
+    let propQuery = { is_deleted: 0 };
     // Enforce isolation
     leadQuery.created_by = userId;
     propQuery.created_by = userId;
