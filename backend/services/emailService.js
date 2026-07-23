@@ -5,34 +5,26 @@
 const nodemailer = require('nodemailer');
 
 class EmailService {
-  constructor() {
-    this.isConfigured = false;
-    this.emailUser = process.env.EMAIL_USER;
-    this.emailPass = process.env.EMAIL_APP_PASSWORD;
-    this.fromName = process.env.EMAIL_FROM_NAME || 'Real Estate CRM';
-
-    if (this.emailUser && this.emailUser !== 'agent@example.com' && this.emailPass) {
-      this.isConfigured = true;
-      this.transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: this.emailUser,
-          pass: this.emailPass.replace(/\s+/g, '') // remove any spaces
-        }
-      });
-    }
-  }
-
-  async sendEmail(to, subject, body, attachments = []) {
-    if (!this.isConfigured) {
+  async sendEmail(to, subject, body, attachments = [], credentials = {}) {
+    const { email, password } = credentials;
+    const isConfigured = email && password;
+    if (!isConfigured) {
       console.log(`📧 [DUMMY Email] Would send to ${to}: Subject="${subject}"`);
       await new Promise(resolve => setTimeout(resolve, 500));
       return { success: true, messageId: 'dummy', timestamp: new Date().toISOString() };
     }
 
     try {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: email,
+          pass: password.replace(/\s+/g, '')
+        }
+      });
+
       const mailOptions = {
-        from: `"${this.fromName}" <${this.emailUser}>`,
+        from: `"Real Estate CRM" <${email}>`,
         to,
         subject,
         text: body, // plaintext body
@@ -40,7 +32,7 @@ class EmailService {
         attachments
       };
 
-      const info = await this.transporter.sendMail(mailOptions);
+      const info = await transporter.sendMail(mailOptions);
       console.log(`✅ [Email] Sent to ${to}. MessageID: ${info.messageId}`);
       
       return {
@@ -54,12 +46,13 @@ class EmailService {
     }
   }
 
-  getStatus() {
+  getStatus(credentials = {}) {
+    const isConfigured = credentials.email && credentials.password;
     return {
       service: 'Email',
-      mode: this.isConfigured ? 'LIVE' : 'DUMMY',
-      configured: this.isConfigured,
-      note: this.isConfigured
+      mode: isConfigured ? 'LIVE' : 'DUMMY',
+      configured: !!isConfigured,
+      note: isConfigured
         ? 'Connected to Gmail SMTP server'
         : 'Running in DUMMY mode. Please set your actual EMAIL_USER.'
     };

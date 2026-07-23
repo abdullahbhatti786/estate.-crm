@@ -3,17 +3,9 @@
 // Replace with real Meta WhatsApp Cloud API calls in production.
 
 class WhatsAppService {
-  constructor() {
-    this.isConfigured = false;
-    this.phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-    this.accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-
-    if (this.phoneNumberId && this.phoneNumberId !== 'DUMMY_PHONE_ID') {
-      this.isConfigured = true;
-    }
-  }
-
-  async sendMessage(to, message, attachments = []) {
+  async sendMessage(to, message, attachments = [], credentials = {}) {
+    const { phoneNumberId, accessToken } = credentials;
+    const isConfigured = phoneNumberId && accessToken;
     // DUMMY: Simulate sending with random success/failure
     const attachmentLog = attachments.length > 0 ? ` [Attached ${attachments.length} files]` : '';
     console.log(`📱 [DUMMY WhatsApp] Sending to ${to}: "${message.substring(0, 50)}..."${attachmentLog}`);
@@ -37,14 +29,15 @@ class WhatsAppService {
     }
   }
 
-  getStatus() {
+  getStatus(credentials = {}) {
+    const isConfigured = credentials.phoneNumberId && credentials.accessToken;
     return {
       service: 'WhatsApp',
-      mode: this.isConfigured ? 'LIVE' : 'DUMMY',
-      configured: this.isConfigured,
-      note: this.isConfigured
+      mode: isConfigured ? 'LIVE' : 'DUMMY',
+      configured: !!isConfigured,
+      note: isConfigured
         ? 'Connected to Meta WhatsApp Cloud API'
-        : 'Running in DUMMY mode. Set WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_ACCESS_TOKEN in .env for live messaging.'
+        : 'Running in DUMMY mode. Please configure your integration settings.'
     };
   }
 }

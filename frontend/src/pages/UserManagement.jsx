@@ -105,9 +105,8 @@ export default function UserManagement() {
             <div key={user.id} className="glass-card p-5 hover:border-border-light transition-all">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold ${
-                    user.role === 'admin' ? 'bg-accent-dim/30 text-accent border border-accent/20' : 'bg-info-dim/30 text-info border border-info/20'
-                  }`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold ${user.role === 'admin' ? 'bg-accent-dim/30 text-accent border border-accent/20' : 'bg-info-dim/30 text-info border border-info/20'
+                    }`}>
                     {user.full_name?.[0] || 'U'}
                   </div>
                   <div>
@@ -127,12 +126,10 @@ export default function UserManagement() {
 
               <div className="flex items-center justify-between">
                 <div className="flex gap-2">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                    user.role === 'admin' ? 'bg-accent-dim text-accent' : 'bg-bg-elevated text-text-secondary'
-                  }`}>{user.role}</span>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                    user.is_active ? 'bg-success-dim/30 text-success' : 'bg-danger-dim/30 text-danger'
-                  }`}>{user.is_active ? 'Active' : 'Inactive'}</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${user.role === 'admin' ? 'bg-accent-dim text-accent' : 'bg-bg-elevated text-text-secondary'
+                    }`}>{user.role}</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${user.is_active ? 'bg-success-dim/30 text-success' : 'bg-danger-dim/30 text-danger'
+                    }`}>{user.is_active ? 'Active' : 'Inactive'}</span>
                 </div>
                 {user.role !== 'admin' && (
                   <div className="flex gap-1">

@@ -1,7 +1,8 @@
 const express = require('express');
 const MessageLog = require('../models/MessageLog');
+const User = require('../models/User');
 const whatsappService = require('../services/whatsappService');
-const emailService = require('../services/emailService');
+const emailService = new (require('../services/emailService'))();
 
 const router = express.Router();
 
@@ -25,6 +26,12 @@ router.post('/whatsapp', async (req, res) => {
       return res.status(400).json({ error: 'Message is required' });
     }
 
+    const user = await User.findById(req.session.user.id);
+    const credentials = {
+      phoneNumberId: user.whatsapp_phone_number_id,
+      accessToken: user.whatsapp_access_token
+    };
+
     const results = [];
     const delayMs = parseInt(process.env.WHATSAPP_DELAY_MS) || 3000;
 
@@ -43,7 +50,7 @@ router.post('/whatsapp', async (req, res) => {
       });
 
       try {
-        const result = await whatsappService.sendMessage(contact.phone, personalizedMessage, attachments);
+        const result = await whatsappService.sendMessage(contact.phone, personalizedMessage, attachments, credentials);
         await MessageLog.findByIdAndUpdate(log._id, { status: 'sent' });
         results.push({ contact: contact.name, status: 'sent', messageId: result.messageId });
       } catch (err) {
@@ -63,7 +70,7 @@ router.post('/whatsapp', async (req, res) => {
       success: true,
       summary: { total: contacts.length, sent, failed },
       results,
-      mode: whatsappService.getStatus().mode
+      mode: whatsappService.getStatus(credentials).mode
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -81,6 +88,12 @@ router.post('/email', async (req, res) => {
     if (!message || !subject) {
       return res.status(400).json({ error: 'Subject and message are required' });
     }
+
+    const user = await User.findById(req.session.user.id);
+    const credentials = {
+      email: user.gmail_email,
+      password: user.gmail_app_password
+    };
 
     const results = [];
     const delayMs = parseInt(process.env.EMAIL_DELAY_MS) || 1000;
@@ -101,7 +114,7 @@ router.post('/email', async (req, res) => {
       });
 
       try {
-        const result = await emailService.sendEmail(contact.email, personalizedSubject, personalizedMessage, attachments);
+        const result = await emailService.sendEmail(contact.email, personalizedSubject, personalizedMessage, attachments, credentials);
         await MessageLog.findByIdAndUpdate(log._id, { status: 'sent' });
         results.push({ contact: contact.name, status: 'sent', messageId: result.messageId });
       } catch (err) {
@@ -121,7 +134,7 @@ router.post('/email', async (req, res) => {
       success: true,
       summary: { total: contacts.length, sent, failed },
       results,
-      mode: emailService.getStatus().mode
+      mode: emailService.getStatus(credentials).mode
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

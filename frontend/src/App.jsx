@@ -14,6 +14,7 @@ import Inventory from './pages/Inventory';
 import Upload from './pages/Upload';
 import Messaging from './pages/Messaging';
 import MessageLogs from './pages/MessageLogs';
+import Settings from './pages/Settings';
 import UserManagement from './pages/UserManagement';
 import DataWorking from './pages/DataWorking';
 
@@ -335,6 +336,7 @@ export default function App() {
             <Route path="/upload" element={<Upload />} />
             <Route path="/messaging" element={<Messaging />} />
             <Route path="/message-logs" element={<MessageLogs />} />
+            <Route path="/settings" element={<Settings />} />
             <Route element={<AdminRoute />}>
               <Route path="/users" element={<UserManagement />} />
             </Route>

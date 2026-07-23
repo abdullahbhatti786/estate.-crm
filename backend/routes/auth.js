@@ -157,4 +157,40 @@ router.put('/users/:id/password', authMiddleware, adminOnly, async (req, res) =>
   }
 });
 
+// GET /api/auth/integrations
+router.get('/integrations', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    // We return whether the password/token is set, not the actual value for security
+    res.json({
+      gmail_email: user.gmail_email || '',
+      has_gmail_password: !!user.gmail_app_password,
+      whatsapp_phone_number_id: user.whatsapp_phone_number_id || '',
+      has_whatsapp_token: !!user.whatsapp_access_token
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/auth/integrations
+router.put('/integrations', authMiddleware, async (req, res) => {
+  try {
+    const { gmail_email, gmail_app_password, whatsapp_phone_number_id, whatsapp_access_token } = req.body;
+    
+    const updateData = {};
+    if (gmail_email !== undefined) updateData.gmail_email = gmail_email;
+    if (gmail_app_password) updateData.gmail_app_password = gmail_app_password; // only update if provided
+    if (whatsapp_phone_number_id !== undefined) updateData.whatsapp_phone_number_id = whatsapp_phone_number_id;
+    if (whatsapp_access_token) updateData.whatsapp_access_token = whatsapp_access_token;
+
+    await User.findByIdAndUpdate(req.session.user.id, updateData);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
