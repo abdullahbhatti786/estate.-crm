@@ -28,7 +28,7 @@ const PROPERTY_FIELDS = [
 
 export default function UploadPage() {
   const [step, setStep] = useState(1); // 1: upload, 2: map, 3: result
-  const [targetTable, setTargetTable] = useState('leads');
+  const [targetTable, setTargetTable] = useState('data_working_leads');
   const [uploading, setUploading] = useState(false);
   const [fileData, setFileData] = useState(null);
   const [mapping, setMapping] = useState({});
@@ -36,7 +36,8 @@ export default function UploadPage() {
   const [importResult, setImportResult] = useState(null);
   const fileInputRef = useRef(null);
 
-  const fields = targetTable === 'leads' ? LEAD_FIELDS : PROPERTY_FIELDS;
+  const isLeads = targetTable.includes('leads');
+  const fields = isLeads ? LEAD_FIELDS : PROPERTY_FIELDS;
 
   const handleUpload = async (e) => {
     const file = e.target.files[0];
@@ -140,24 +141,16 @@ export default function UploadPage() {
         <div className="glass-card p-8">
           <div className="mb-6">
             <label className="block text-sm font-medium text-text-secondary mb-2">Import Into</label>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setTargetTable('leads')}
-                className={`px-4 py-2.5 rounded-lg text-sm font-medium border transition-all ${
-                  targetTable === 'leads' ? 'bg-accent-dim/30 text-accent border-accent/50' : 'bg-bg-elevated text-text-secondary border-border hover:border-border-light'
-                }`}
-              >
-                Sales Pipeline (Leads)
-              </button>
-              <button
-                onClick={() => setTargetTable('properties')}
-                className={`px-4 py-2.5 rounded-lg text-sm font-medium border transition-all ${
-                  targetTable === 'properties' ? 'bg-accent-dim/30 text-accent border-accent/50' : 'bg-bg-elevated text-text-secondary border-border hover:border-border-light'
-                }`}
-              >
-                Property Management
-              </button>
-            </div>
+            <select
+              value={targetTable}
+              onChange={(e) => setTargetTable(e.target.value)}
+              className="w-full sm:w-80 px-4 py-2.5 bg-bg-elevated border border-border rounded-xl text-sm font-medium focus:outline-none focus:border-accent/50 transition-all"
+            >
+              <option value="data_working_leads">Data Working (Sales)</option>
+              <option value="data_working_properties">Data Working (Properties)</option>
+              <option value="leads">Direct to Sales Pipeline</option>
+              <option value="properties">Direct to Properties List</option>
+            </select>
           </div>
 
           <div

@@ -11,6 +11,7 @@ import { toast } from './Toast';
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/leads', icon: Users, label: 'Sales Pipeline' },
+  { path: '/data-working', icon: ClipboardList, label: 'Data Working' },
   { path: '/properties', icon: Building2, label: 'Properties' },
   { path: '/inventory', icon: Box, label: 'Inventory' },
   { path: '/upload', icon: Upload, label: 'Excel Import' },

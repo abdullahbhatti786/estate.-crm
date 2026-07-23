@@ -173,10 +173,16 @@ router.post('/confirm', async (req, res) => {
 
     let result;
     if (targetTable === 'leads') {
-      const inserted = await Lead.insertMany(mappedRowsWithUser);
+      const inserted = await Lead.insertMany(mappedRowsWithUser.map(r => ({...r, is_data_working: false})));
+      result = { inserted: inserted.length };
+    } else if (targetTable === 'data_working_leads') {
+      const inserted = await Lead.insertMany(mappedRowsWithUser.map(r => ({...r, is_data_working: true})));
       result = { inserted: inserted.length };
     } else if (targetTable === 'properties') {
-      const inserted = await Property.insertMany(mappedRowsWithUser);
+      const inserted = await Property.insertMany(mappedRowsWithUser.map(r => ({...r, is_data_working: false})));
+      result = { inserted: inserted.length };
+    } else if (targetTable === 'data_working_properties') {
+      const inserted = await Property.insertMany(mappedRowsWithUser.map(r => ({...r, is_data_working: true})));
       result = { inserted: inserted.length };
     } else {
       return res.status(400).json({ error: 'Invalid target table. Use "leads" or "properties".' });

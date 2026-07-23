@@ -8,6 +8,7 @@ const leadSchema = new mongoose.Schema({
   status: { type: String, required: true, default: 'New' },
   source: { type: String, required: true, default: 'Manual' },
   follow_up_date: { type: Date },
+  is_data_working: { type: Boolean, default: false },
   is_deleted: { type: Number, required: true, default: 0 },
   created_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });

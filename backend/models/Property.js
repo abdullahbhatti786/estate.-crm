@@ -17,6 +17,7 @@ const propertySchema = new mongoose.Schema({
   images: { type: [String], default: [] },
   documents: { type: [mongoose.Schema.Types.Mixed], default: [] },
   payment_schedule: { type: [mongoose.Schema.Types.Mixed], default: [] },
+  is_data_working: { type: Boolean, default: false },
   is_deleted: { type: Number, required: true, default: 0 },
   created_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });

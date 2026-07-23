@@ -6,9 +6,9 @@ const router = express.Router();
 // GET /api/properties
 router.get('/', async (req, res) => {
   try {
-    const { search, payment_status, property_status, page = 1, limit = 20 } = req.query;
+    const { search, payment_status, property_status, page = 1, limit = 20, is_data_working = 'false' } = req.query;
     
-    let query = { is_deleted: 0 };
+    let query = { is_deleted: 0, is_data_working: is_data_working === 'true' };
     
     if (req.session.user?.role !== 'admin') {
       query.created_by = req.session.user?.id;
@@ -77,6 +77,7 @@ router.post('/', async (req, res) => {
 
     const property = await Property.create({
       ...req.body,
+      is_data_working: req.body.is_data_working === true,
       created_by: req.session.user?.id
     });
     res.status(201).json({ success: true, property });
@@ -91,6 +92,25 @@ router.put('/:id', async (req, res) => {
     const property = await Property.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!property || property.is_deleted) return res.status(404).json({ error: 'Property not found' });
     res.json({ success: true, property });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/properties/bulk/transfer
+router.put('/bulk/transfer', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(400).json({ error: 'ids array is required' });
+    }
+
+    await Property.updateMany(
+      { _id: { $in: ids } },
+      { $set: { is_data_working: false } }
+    );
+
+    res.json({ success: true, message: 'Properties transferred successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
