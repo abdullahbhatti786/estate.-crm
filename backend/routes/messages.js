@@ -134,9 +134,7 @@ router.get('/logs', async (req, res) => {
     const { channel, status, page = 1, limit = 20 } = req.query;
     
     let query = {};
-    if (req.session.user?.role !== 'admin') {
-      query.sent_by = req.session.user?.id;
-    }
+    query.sent_by = req.session.user?.id;
     if (channel && channel !== 'All') query.channel = channel;
     if (status && status !== 'All') query.status = status;
 

@@ -141,4 +141,20 @@ router.delete('/users/:id', authMiddleware, adminOnly, async (req, res) => {
   }
 });
 
+// PUT /api/auth/users/:id/password (admin only)
+router.put('/users/:id/password', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    const password_hash = await bcrypt.hash(password, 10);
+    const user = await User.findByIdAndUpdate(req.params.id, { password_hash }, { new: true });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

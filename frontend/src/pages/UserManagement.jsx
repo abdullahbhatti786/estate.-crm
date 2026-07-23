@@ -3,7 +3,7 @@ import api from '../services/api';
 import Modal from '../components/Modal';
 import StatusBadge from '../components/StatusBadge';
 import { toast } from '../components/Toast';
-import { Plus, Pencil, Trash2, Shield, UserCheck, UserX } from 'lucide-react';
+import { Plus, Pencil, Trash2, Shield, UserCheck, UserX, Key } from 'lucide-react';
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -11,6 +11,8 @@ export default function UserManagement() {
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ username: '', full_name: '', email: '', password: '', role: 'agent' });
   const [saving, setSaving] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ id: '', password: '' });
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -60,6 +62,21 @@ export default function UserManagement() {
       fetchUsers();
     } catch (err) {
       toast(err.response?.data?.error || 'Cannot delete', 'error');
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await api.put(`/auth/users/${passwordForm.id}/password`, { password: passwordForm.password });
+      toast('Password updated', 'success');
+      setPasswordModalOpen(false);
+      setPasswordForm({ id: '', password: '' });
+    } catch (err) {
+      toast(err.response?.data?.error || 'Failed to update password', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -124,6 +141,14 @@ export default function UserManagement() {
                       title={user.is_active ? 'Deactivate' : 'Activate'}>
                       {user.is_active ? <UserX size={14} /> : <UserCheck size={14} />}
                     </button>
+                    <button onClick={() => {
+                      setPasswordForm({ id: user.id, password: '' });
+                      setPasswordModalOpen(true);
+                    }}
+                      className="p-1.5 rounded-md bg-bg-surface border border-border text-text-muted hover:text-info hover:border-info/30 transition-all"
+                      title="Change Password">
+                      <Key size={14} />
+                    </button>
                     <button onClick={() => handleDelete(user.id)}
                       className="p-1.5 rounded-md bg-bg-surface border border-border text-text-muted hover:text-danger hover:border-danger/30 transition-all">
                       <Trash2 size={14} />
@@ -165,6 +190,21 @@ export default function UserManagement() {
             <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 bg-bg-surface border border-border rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary transition-all">Cancel</button>
             <button type="submit" disabled={saving} className="px-5 py-2 bg-accent text-bg-primary font-bold rounded-lg hover:bg-accent-hover disabled:opacity-50 transition-all">
               {saving ? 'Creating...' : 'Create User'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={passwordModalOpen} onClose={() => setPasswordModalOpen(false)} title="Change Password" maxWidth="max-w-md">
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1.5">New Password *</label>
+            <input type="password" required value={passwordForm.password} onChange={(e) => setPasswordForm({ ...passwordForm, password: e.target.value })} className={inputClass} placeholder="Min 6 characters" />
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-border mt-6">
+            <button type="button" onClick={() => setPasswordModalOpen(false)} className="px-4 py-2 bg-bg-surface border border-border rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary transition-all">Cancel</button>
+            <button type="submit" disabled={saving} className="px-5 py-2 bg-accent text-bg-primary font-bold rounded-lg hover:bg-accent-hover disabled:opacity-50 transition-all">
+              {saving ? 'Updating...' : 'Update Password'}
             </button>
           </div>
         </form>

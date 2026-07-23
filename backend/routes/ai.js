@@ -13,7 +13,7 @@ router.post('/generate', async (req, res) => {
       });
     }
 
-    const { prompt, channel, image } = req.body;
+    const { prompt, channel, image, history } = req.body;
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
@@ -35,7 +35,15 @@ IMPORTANT RULES:
 4. Do not include subject lines unless it's an email. If it is an email, put "Subject: ..." on the first line.
 5. Provide ONLY the final message text, no conversational filler like "Here is the draft:".`;
 
-    const fullPrompt = `${systemPrompt}\n\nUser Request: ${prompt}`;
+    let fullPrompt = `${systemPrompt}\n\n`;
+    if (history && history.length > 0) {
+      fullPrompt += "Previous Conversation Context (for memory):\n";
+      history.forEach((msg, i) => {
+        fullPrompt += `User: ${msg.prompt}\nAI: ${msg.response}\n\n`;
+      });
+      fullPrompt += "---\n\n";
+    }
+    fullPrompt += `Current User Request: ${prompt}`;
 
     const promptParts = [fullPrompt];
     if (image && image.data && image.mimeType) {

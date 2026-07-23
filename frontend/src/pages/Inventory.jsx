@@ -25,6 +25,8 @@ export default function Inventory() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [deletingBulk, setDeletingBulk] = useState(false);
 
   const fetchInventory = useCallback(async () => {
     setLoading(true);
@@ -174,12 +176,31 @@ export default function Inventory() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this inventory record?')) return;
+    if (!confirm('Are you sure you want to delete this property?')) return;
     try {
       await api.delete(`/properties/${id}`);
-      toast('Property deleted', 'success');
+      toast('Deleted successfully', 'success');
       fetchInventory();
-    } catch { toast('Failed to delete', 'error'); }
+    } catch {
+      toast('Failed to delete property', 'error');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedIds.length} properties?`)) return;
+
+    setDeletingBulk(true);
+    try {
+      await api.delete('/properties/bulk/delete', { data: { ids: selectedIds } });
+      toast('Properties deleted successfully!', 'success');
+      setSelectedIds([]);
+      fetchInventory();
+    } catch (err) {
+      toast(err.response?.data?.error || 'Bulk delete failed', 'error');
+    } finally {
+      setDeletingBulk(false);
+    }
   };
 
   const formatAED = (val) => {
@@ -231,14 +252,23 @@ export default function Inventory() {
           <h1 className="text-2xl font-bold text-text-primary">Inventory</h1>
           <p className="text-sm text-text-muted mt-1">Manage available properties for rent</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
           <button onClick={() => window.open('/api/upload/export/inventory', '_blank')}
             className="flex items-center gap-2 px-4 py-2.5 bg-bg-surface border border-border rounded-lg text-sm font-medium text-text-primary hover:bg-bg-hover transition-all">
             <Download size={16} /><span className="hidden sm:inline">Export</span>
           </button>
+          {selectedIds.length > 0 && (
+            <button 
+              onClick={handleBulkDelete}
+              disabled={deletingBulk}
+              className="flex items-center gap-2 px-4 py-2.5 bg-danger/10 text-danger border border-danger/20 font-bold rounded-lg hover:bg-danger/20 transition-all duration-300 disabled:opacity-50">
+              <Trash2 size={16} />
+              <span className="hidden sm:inline">{deletingBulk ? 'Deleting...' : `Delete (${selectedIds.length})`}</span>
+            </button>
+          )}
           <button id="add-inventory-btn" onClick={openCreate}
-            className="flex items-center gap-2 px-5 py-2.5 bg-accent text-bg-primary font-bold rounded-lg hover:bg-accent-hover transition-all duration-300">
-            <Plus size={16} /><span>Add to Inventory</span>
+            className="flex items-center gap-2 px-5 py-2.5 bg-accent text-bg-primary font-bold rounded-lg hover:bg-accent-hover transition-all duration-300 shadow-lg shadow-accent/20">
+            <Plus size={16} /> <span className="hidden sm:inline">Add Inventory</span>
           </button>
         </div>
       </div>
@@ -251,6 +281,9 @@ export default function Inventory() {
         pages={pages}
         onPageChange={setPage}
         onSearch={handleSearch}
+        selectable={true}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
         searchPlaceholder="Search available properties..."
         loading={loading}
         emptyMessage="No inventory properties found."

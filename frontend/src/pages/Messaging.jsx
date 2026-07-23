@@ -21,6 +21,7 @@ export default function Messaging() {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiDraft, setAiDraft] = useState('');
   const [aiError, setAiError] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
   const [aiImage, setAiImage] = useState(null);
 
   const fetchContacts = useCallback(async () => {
@@ -86,12 +87,18 @@ export default function Messaging() {
     setAiError('');
     setAiDraft('');
     try {
-      const body = { prompt: aiPrompt, channel };
+      const body = { prompt: aiPrompt, channel, history: chatHistory };
       if (aiImage) {
         body.image = { data: aiImage.data, mimeType: aiImage.mimeType };
       }
       const res = await api.post('/ai/generate', body);
       setAiDraft(res.data.text);
+      
+      // Update history (keep last 10)
+      setChatHistory(prev => {
+        const newHistory = [...prev, { prompt: aiPrompt, response: res.data.text }];
+        return newHistory.slice(-10); // Keep only last 10 messages
+      });
     } catch (err) {
       if (err.response?.data?.missing_key) {
         setAiError(err.response.data.error);
@@ -117,7 +124,7 @@ export default function Messaging() {
   const handleAiImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) return toast('File must be under 5MB', 'error');
+      if (file.size > 3.5 * 1024 * 1024) return toast('File must be under 3.5MB', 'error');
       const reader = new FileReader();
       reader.onloadend = () => {
         setAiImage({ data: reader.result.split(',')[1], mimeType: file.type, preview: reader.result });
@@ -129,7 +136,7 @@ export default function Messaging() {
   const handleAttachmentUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) return toast('File must be under 10MB', 'error');
+    if (file.size > 3.5 * 1024 * 1024) return toast('File must be under 3.5MB', 'error');
     
     const formData = new FormData();
     formData.append('document', file);

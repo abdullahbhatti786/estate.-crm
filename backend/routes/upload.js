@@ -84,8 +84,15 @@ const documentUpload = multer({
 // ----------------- ROUTES -----------------
 
 // POST /api/upload/image — Upload single image and return Cloudinary URL
-router.post('/image', imageUpload.single('image'), (req, res) => {
-  try {
+router.post('/image', (req, res) => {
+  imageUpload.single('image')(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'Image size must be less than 3.5MB' });
+      return res.status(400).json({ error: err.message });
+    } else if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    
     if (!req.file) {
       return res.status(400).json({ error: 'No image uploaded' });
     }
@@ -94,14 +101,19 @@ router.post('/image', imageUpload.single('image'), (req, res) => {
       success: true,
       imageUrl: req.file.path // Cloudinary URL
     });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+  });
 });
 
 // POST /api/upload/document — Upload single document and return Cloudinary URL
-router.post('/document', documentUpload.single('document'), (req, res) => {
-  try {
+router.post('/document', (req, res) => {
+  documentUpload.single('document')(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'Document size must be less than 3.5MB' });
+      return res.status(400).json({ error: err.message });
+    } else if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+
     if (!req.file) {
       return res.status(400).json({ error: 'No document uploaded' });
     }
@@ -111,32 +123,39 @@ router.post('/document', documentUpload.single('document'), (req, res) => {
       documentUrl: req.file.path, // Cloudinary URL
       documentName: req.file.originalname
     });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+  });
 });
 
 // POST /api/upload/excel — Upload and parse file, return headers + preview
-router.post('/excel', excelUpload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+router.post('/excel', (req, res) => {
+  excelUpload.single('file')(req, res, async function (err) {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'Excel size must be less than 10MB' });
+      return res.status(400).json({ error: err.message });
+    } else if (err) {
+      return res.status(400).json({ error: err.message });
     }
 
-    const result = await parseExcelFile(req.file.path);
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
 
-    res.json({
-      success: true,
-      fileId: path.basename(req.file.filename, path.extname(req.file.filename)),
-      fileName: req.file.originalname,
-      headers: result.headers,
-      previewRows: result.previewRows,
-      totalRows: result.totalRows
-    });
-  } catch (err) {
-    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-    res.status(400).json({ error: err.message });
-  }
+      const result = await parseExcelFile(req.file.path);
+
+      res.json({
+        success: true,
+        fileId: path.basename(req.file.filename, path.extname(req.file.filename)),
+        fileName: req.file.originalname,
+        headers: result.headers,
+        previewRows: result.previewRows,
+        totalRows: result.totalRows
+      });
+    } catch (err) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      res.status(400).json({ error: err.message });
+    }
+  });
 });
 
 // POST /api/upload/confirm — Map columns and import data

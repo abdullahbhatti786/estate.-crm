@@ -15,10 +15,8 @@ router.get('/', async (req, res) => {
       query.$or = [{ is_data_working: false }, { is_data_working: { $exists: false } }];
     }
     
-    // Non-admins can only see their own leads
-    if (req.session.user?.role !== 'admin') {
-      query.created_by = req.session.user?.id;
-    }
+    // Enforce data isolation: All users (including admins) only see their own data
+    query.created_by = req.session.user?.id;
 
     if (status && status !== 'All') {
       query.status = status;

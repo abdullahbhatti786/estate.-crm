@@ -14,9 +14,7 @@ router.get('/events', async (req, res) => {
 
     // 1. Get custom manual events
     let eventQuery = {};
-    if (role !== 'admin') {
-      eventQuery.created_by = userId;
-    }
+    eventQuery.created_by = userId;
     const rawEvents = await CalendarEvent.find(eventQuery);
     
     const customEvents = rawEvents.map(e => ({
@@ -31,10 +29,8 @@ router.get('/events', async (req, res) => {
 
     let propQuery = { is_deleted: 0 };
     let leadQuery = { is_deleted: 0 };
-    if (role !== 'admin') {
-      propQuery.created_by = userId;
-      leadQuery.created_by = userId;
-    }
+    propQuery.created_by = userId;
+    leadQuery.created_by = userId;
 
     // 2. Get Lease Expirations
     const properties = await Property.find(propQuery);
@@ -115,8 +111,8 @@ router.delete('/events/:id', async (req, res) => {
     const event = await CalendarEvent.findById(req.params.id);
     if (!event) return res.status(404).json({ error: 'Event not found' });
     
-    if (req.session.user?.role !== 'admin' && event.created_by.toString() !== req.session.user?.id.toString()) {
-       return res.status(403).json({ error: 'Unauthorized' });
+    if (event.created_by.toString() !== req.session.user?.id.toString()) {
+      return res.status(403).json({ error: 'Forbidden' });
     }
 
     await CalendarEvent.findByIdAndDelete(req.params.id);
