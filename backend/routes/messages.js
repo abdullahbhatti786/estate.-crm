@@ -2,7 +2,7 @@ const express = require('express');
 const MessageLog = require('../models/MessageLog');
 const User = require('../models/User');
 const whatsappService = require('../services/whatsappService');
-const emailService = new (require('../services/emailService'))();
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 
