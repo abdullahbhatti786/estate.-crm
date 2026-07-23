@@ -158,6 +158,33 @@ export default function Settings() {
               />
             </div>
           </div>
+
+          <div className="mt-6 p-4 border border-info/30 bg-info-dim/10 rounded-xl">
+            <h4 className="text-sm font-bold text-info mb-2 flex items-center gap-2">
+              <MessageSquare size={16} /> Webhook Configuration (For Inbox Replies)
+            </h4>
+            <p className="text-xs text-text-secondary mb-3">
+              To receive replies from leads directly in your CRM Inbox, copy these details into your Meta App Webhook settings:
+            </p>
+            <div className="space-y-2">
+              <div>
+                <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Callback URL</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="text-xs text-info bg-info-dim/20 px-2 py-1 rounded">
+                    https://estate-crm-backend.vercel.app/api/webhooks/whatsapp
+                  </code>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Verify Token</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="text-xs text-info bg-info-dim/20 px-2 py-1 rounded">
+                    nexus_crm_webhook_secret
+                  </code>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end pt-4">

@@ -1,6 +1,8 @@
 const express = require('express');
 const MessageLog = require('../models/MessageLog');
 const User = require('../models/User');
+const ChatThread = require('../models/ChatThread');
+const ChatMessage = require('../models/ChatMessage');
 const whatsappService = require('../services/whatsappService');
 const emailService = require('../services/emailService');
 
@@ -53,6 +55,32 @@ router.post('/whatsapp', async (req, res) => {
         const result = await whatsappService.sendMessage(contact.phone, personalizedMessage, attachments, credentials);
         await MessageLog.findByIdAndUpdate(log._id, { status: 'sent' });
         results.push({ contact: contact.name, status: 'sent', messageId: result.messageId });
+
+        // Update Inbox
+        let thread = await ChatThread.findOne({ user: user._id, contact_number: contact.phone });
+        if (!thread) {
+          thread = await ChatThread.create({
+            user: user._id,
+            contact_number: contact.phone,
+            contact_name: contact.name,
+            last_message: personalizedMessage,
+            unread_count: 0
+          });
+        } else {
+          thread.last_message = personalizedMessage;
+          thread.last_message_at = Date.now();
+          thread.contact_name = contact.name;
+          await thread.save();
+        }
+
+        await ChatMessage.create({
+          thread: thread._id,
+          sender: 'agent',
+          message: personalizedMessage,
+          message_id: result.messageId || 'dummy',
+          status: 'sent'
+        });
+
       } catch (err) {
         await MessageLog.findByIdAndUpdate(log._id, { status: 'failed', error_message: err.message });
         results.push({ contact: contact.name, status: 'failed', error: err.message });
