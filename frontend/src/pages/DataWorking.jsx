@@ -6,19 +6,19 @@ import { ArrowRightLeft } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 
 const LEAD_COLUMNS = [
-  { key: 'name', label: 'Name', render: (val) => <span className="font-semibold">{val}</span> },
-  { key: 'phone', label: 'Phone' },
-  { key: 'email', label: 'Email' },
-  { key: 'status', label: 'Status', render: (val) => <StatusBadge status={val} /> },
-  { key: 'source', label: 'Source' },
+  { key: 'name', header: 'Name', render: (val) => <span className="font-semibold">{val}</span> },
+  { key: 'phone', header: 'Phone' },
+  { key: 'email', header: 'Email' },
+  { key: 'status', header: 'Status', render: (val) => <StatusBadge status={val} /> },
+  { key: 'source', header: 'Source' },
 ];
 
 const PROPERTY_COLUMNS = [
-  { key: 'owner_name', label: 'Owner', render: (val) => <span className="font-semibold">{val}</span> },
-  { key: 'apartment_unit', label: 'Unit' },
-  { key: 'rent_amount', label: 'Rent', render: (val) => `$${val?.toLocaleString()}` },
-  { key: 'payment_status', label: 'Payment', render: (val) => <StatusBadge status={val} /> },
-  { key: 'property_status', label: 'Status', render: (val) => <StatusBadge status={val} /> }
+  { key: 'owner_name', header: 'Owner', render: (val) => <span className="font-semibold">{val}</span> },
+  { key: 'apartment_unit', header: 'Unit' },
+  { key: 'rent_amount', header: 'Rent', render: (val) => `$${val?.toLocaleString()}` },
+  { key: 'payment_status', header: 'Payment', render: (val) => <StatusBadge status={val} /> },
+  { key: 'property_status', header: 'Status', render: (val) => <StatusBadge status={val} /> }
 ];
 
 export default function DataWorking() {

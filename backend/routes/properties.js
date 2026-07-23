@@ -8,7 +8,12 @@ router.get('/', async (req, res) => {
   try {
     const { search, payment_status, property_status, page = 1, limit = 20, is_data_working = 'false' } = req.query;
     
-    let query = { is_deleted: 0, is_data_working: is_data_working === 'true' };
+    let query = { is_deleted: 0 };
+    if (is_data_working === 'true') {
+      query.is_data_working = true;
+    } else {
+      query.$or = [{ is_data_working: false }, { is_data_working: { $exists: false } }];
+    }
     
     if (req.session.user?.role !== 'admin') {
       query.created_by = req.session.user?.id;
