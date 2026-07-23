@@ -75,6 +75,9 @@ app.get('/api/proxy-download', (req, res) => {
   });
 });
 
+// Webhooks (Must be public, no authMiddleware)
+app.use('/api/webhooks', require('./routes/webhooks'));
+
 // Protected API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/leads', authMiddleware, require('./routes/leads'));
@@ -85,6 +88,7 @@ app.use('/api/messages', authMiddleware, require('./routes/messages'));
 app.use('/api/dashboard', authMiddleware, require('./routes/dashboard'));
 app.use('/api/calendar', authMiddleware, require('./routes/calendar'));
 app.use('/api/ai', authMiddleware, require('./routes/ai'));
+app.use('/api/chat', authMiddleware, require('./routes/chat'));
 
 // Health check
 app.get('/api/health', (req, res) => {

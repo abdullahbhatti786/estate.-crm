@@ -16,6 +16,7 @@ const navItems = [
   { path: '/inventory', icon: Box, label: 'Inventory' },
   { path: '/upload', icon: Upload, label: 'Excel Import' },
   { path: '/messaging', icon: MessageSquare, label: 'Messaging' },
+  { path: '/inbox', icon: MessageSquare, label: 'Inbox (WhatsApp)' },
   { path: '/message-logs', icon: ClipboardList, label: 'Message Logs' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];

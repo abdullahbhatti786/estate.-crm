@@ -17,6 +17,7 @@ import MessageLogs from './pages/MessageLogs';
 import Settings from './pages/Settings';
 import UserManagement from './pages/UserManagement';
 import DataWorking from './pages/DataWorking';
+import Inbox from './pages/Inbox';
 
 function ProtectedRoute() {
   const { user, loading, logout } = useAuth();
@@ -335,6 +336,7 @@ export default function App() {
             <Route path="/data-working" element={<DataWorking />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/messaging" element={<Messaging />} />
+            <Route path="/inbox" element={<Inbox />} />
             <Route path="/message-logs" element={<MessageLogs />} />
             <Route path="/settings" element={<Settings />} />
             <Route element={<AdminRoute />}>
