@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/api';
 import DataTable from '../components/DataTable';
 import { toast } from '../components/Toast';
-import { MessageSquare, Send, AlertTriangle, Info, Sparkles, Copy, RefreshCw, Image as ImageIcon, X, Paperclip } from 'lucide-react';
+import { MessageSquare, Send, AlertTriangle, Info, Sparkles, Copy, RefreshCw, Image as ImageIcon, X, Paperclip, Play, Square, Clock } from 'lucide-react';
 
 export default function Messaging() {
   const [source, setSource] = useState('leads');
@@ -23,6 +23,11 @@ export default function Messaging() {
   const [aiError, setAiError] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [aiImage, setAiImage] = useState(null);
+
+  // Queue Engine State
+  const [delayMinutes, setDelayMinutes] = useState(1);
+  const [queueState, setQueueState] = useState({ status: 'idle', total: 0, sent: 0, currentContact: null, countdown: 0 });
+  const isRunningRef = useRef(false);
 
   const fetchContacts = useCallback(async () => {
     setLoading(true);
@@ -58,27 +63,61 @@ export default function Messaging() {
     if (selected.length === 0) { toast('Select at least one contact', 'warning'); return; }
     if (!message) { toast('Enter a message', 'warning'); return; }
     if (channel === 'email' && !subject) { toast('Enter an email subject', 'warning'); return; }
+    if (delayMinutes < 1) { toast('Minimum delay is 1 minute', 'warning'); return; }
 
+    // Start Queue
     setSending(true);
-    setSendResult(null);
-    try {
-      const endpoint = channel === 'whatsapp' ? '/messages/whatsapp' : '/messages/email';
-      const body = { 
-        contacts: selected, 
-        message, 
-        source_table: source,
-        attachments: attachments 
-      };
-      if (channel === 'email') body.subject = subject;
+    isRunningRef.current = true;
+    setQueueState({ status: 'running', total: selected.length, sent: 0, currentContact: null, countdown: 0 });
 
-      const res = await api.post(endpoint, body);
-      setSendResult(res.data);
-      toast(`Sent to ${res.data.summary.sent}/${res.data.summary.total} contacts`, 'success');
-    } catch (err) {
-      toast(err.response?.data?.error || 'Send failed', 'error');
-    } finally {
-      setSending(false);
+    for (let i = 0; i < selected.length; i++) {
+      if (!isRunningRef.current) break;
+      
+      const contact = selected[i];
+      setQueueState(prev => ({ ...prev, currentContact: contact.name }));
+
+      try {
+        const endpoint = channel === 'whatsapp' ? '/messages/whatsapp' : '/messages/email';
+        const body = { 
+          contacts: [contact], 
+          message, 
+          source_table: source,
+          attachments: attachments 
+        };
+        if (channel === 'email') body.subject = subject;
+
+        await api.post(endpoint, body);
+        
+        // Remove from UI table
+        setContacts(prev => prev.filter(c => c.id !== contact.id));
+        setSelectedIds(prev => prev.filter(id => id !== contact.id));
+
+        setQueueState(prev => ({ ...prev, sent: prev.sent + 1 }));
+      } catch (err) {
+        toast(`Failed to send to ${contact.name}`, 'error');
+      }
+
+      if (i < selected.length - 1 && isRunningRef.current) {
+        let secondsLeft = delayMinutes * 60;
+        while (secondsLeft > 0 && isRunningRef.current) {
+          setQueueState(prev => ({ ...prev, countdown: secondsLeft }));
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          secondsLeft--;
+        }
+      }
     }
+
+    isRunningRef.current = false;
+    setQueueState({ status: 'idle', total: 0, sent: 0, currentContact: null, countdown: 0 });
+    setSending(false);
+    toast('Campaign finished!', 'success');
+  };
+
+  const stopQueue = () => {
+    isRunningRef.current = false;
+    setQueueState(prev => ({ ...prev, status: 'idle', currentContact: null, countdown: 0 }));
+    setSending(false);
+    toast('Campaign Stopped', 'info');
   };
 
   const handleAIGenerate = async () => {
@@ -403,6 +442,24 @@ export default function Messaging() {
             )}
           </div>
 
+          {/* Delay Input */}
+          <div className="glass-card p-4 flex items-center justify-between">
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1">Delay between messages</label>
+              <span className="text-[10px] text-text-muted">Minimum 1 minute to prevent spam blocks.</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input 
+                type="number" 
+                min="1" 
+                value={delayMinutes} 
+                onChange={(e) => setDelayMinutes(Math.max(1, parseInt(e.target.value) || 1))} 
+                className="w-20 px-3 py-2 bg-bg-elevated border border-border rounded-lg text-text-primary focus:outline-none focus:border-accent text-center"
+              />
+              <span className="text-sm font-medium text-text-secondary">mins</span>
+            </div>
+          </div>
+
           <div className="flex gap-3">
             <label className="flex items-center justify-center gap-2 px-4 py-3 bg-bg-elevated border border-border rounded-xl text-text-primary hover:border-accent cursor-pointer transition-colors disabled:opacity-50">
               {uploadingAttachment ? <RefreshCw size={18} className="animate-spin text-accent" /> : <Paperclip size={18} className="text-text-muted" />}
@@ -459,6 +516,54 @@ export default function Messaging() {
           )}
         </div>
       </div>
+
+      {/* Floating Queue Panel */}
+      {queueState.status !== 'idle' && (
+        <div className="fixed bottom-6 right-6 bg-bg-surface border border-accent/30 rounded-2xl shadow-2xl p-5 w-80 z-50 animate-slide-up glass-card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold flex items-center gap-2 text-text-primary">
+              <Play size={16} className="text-accent animate-pulse" /> Campaign Queue
+            </h3>
+            {queueState.status === 'running' && (
+              <button onClick={stopQueue} className="bg-danger/10 text-danger hover:bg-danger hover:text-white px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1">
+                <Square size={12} fill="currentColor" /> STOP
+              </button>
+            )}
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between text-xs text-text-secondary">
+              <span>Progress:</span>
+              <span className="font-bold text-text-primary">{queueState.sent} / {queueState.total} sent</span>
+            </div>
+            
+            <div className="w-full bg-bg-elevated rounded-full h-2 overflow-hidden border border-border">
+              <div 
+                className="bg-accent h-full transition-all duration-500" 
+                style={{ width: `${(queueState.sent / queueState.total) * 100}%` }}
+              />
+            </div>
+
+            {queueState.countdown > 0 ? (
+              <div className="bg-warning-dim/30 border border-warning/20 rounded-lg p-3 flex items-center gap-3">
+                <Clock size={16} className="text-warning animate-spin-slow" />
+                <div className="text-xs">
+                  <span className="block text-text-secondary mb-0.5">Waiting before next...</span>
+                  <span className="font-bold text-warning">{queueState.countdown} seconds left</span>
+                </div>
+              </div>
+            ) : queueState.status === 'running' ? (
+              <div className="bg-info-dim/30 border border-info/20 rounded-lg p-3 text-xs text-info flex items-center gap-2">
+                <RefreshCw size={14} className="animate-spin" /> Sending to {queueState.currentContact}...
+              </div>
+            ) : null}
+            
+            <p className="text-[10px] text-text-muted mt-2 text-center">
+              ⚠️ Keep this tab open until the queue completes!
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
