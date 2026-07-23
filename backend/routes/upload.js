@@ -73,12 +73,12 @@ const excelUpload = multer({
 
 const imageUpload = multer({
   storage: imageStorage,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB max
+  limits: { fileSize: 3.5 * 1024 * 1024 } // 3.5MB max
 });
 
 const documentUpload = multer({
   storage: documentStorage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
+  limits: { fileSize: 3.5 * 1024 * 1024 } // 3.5MB max
 });
 
 // ----------------- ROUTES -----------------

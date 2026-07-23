@@ -40,32 +40,10 @@ const LEAD_COLUMNS = [
 ];
 
 const PROPERTY_COLUMNS = [
-  { 
-    key: 'image', 
-    header: 'Image', 
-    render: (_, row) => (
-      <div className="w-10 h-10 rounded-lg overflow-hidden bg-bg-elevated border border-border shrink-0 flex items-center justify-center">
-        {row.images && row.images.length > 0 ? (
-          <img 
-            src={row.images[0].startsWith('http') ? row.images[0] : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${row.images[0]}`} 
-            alt="Property" 
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <span className="text-xs text-text-muted">No Img</span>
-        )}
-      </div>
-    )
-  },
-  { key: 'docs_count', header: 'Docs', render: (_, row) => {
-    const count = row.documents?.length || 0;
-    return count > 0 ? (
-      <div className="flex items-center gap-1 text-xs font-medium text-accent bg-accent/10 px-2 py-1 rounded w-fit">
-        <FileText size={12} /> {count}
-      </div>
-    ) : <span className="text-xs text-text-muted">—</span>;
-  }},
   { key: 'apartment_unit', header: 'Unit', render: (val) => <span className="font-medium">{val}</span> },
+  { key: 'notes', header: 'Notes', render: (val) => (
+    <span className="max-w-[150px] truncate block text-text-secondary">{val || '—'}</span>
+  )},
   { key: 'owner_name', header: 'Owner' },
   { key: 'owner_phone', header: 'Owner Phone' },
   { key: 'tenant_name', header: 'Tenant' },
@@ -109,6 +87,7 @@ export default function DataWorking() {
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState([]);
   const [transferring, setTransferring] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingData, setEditingData] = useState(null);
 
@@ -171,6 +150,24 @@ export default function DataWorking() {
     }
   };
 
+  const handleBulkDeleteSelected = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedIds.length} records?`)) return;
+
+    setDeleting(true);
+    try {
+      const endpoint = activeTab === 'sales' ? '/leads/bulk/delete' : '/properties/bulk/delete';
+      await api.delete(endpoint, { data: { ids: selectedIds } });
+      toast('Records deleted successfully!', 'success');
+      setSelectedIds([]);
+      fetchData();
+    } catch (err) {
+      toast(err.response?.data?.error || 'Delete failed', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this record?')) return;
     try {
@@ -197,14 +194,24 @@ export default function DataWorking() {
         </div>
 
         {selectedIds.length > 0 && (
-          <button
-            onClick={handleBulkTransfer}
-            disabled={transferring}
-            className="flex items-center gap-2 px-5 py-2.5 bg-accent text-bg-primary font-bold rounded-lg hover:bg-accent-hover transition-all duration-300 disabled:opacity-50"
-          >
-            <ArrowRightLeft size={16} />
-            <span>{transferring ? 'Transferring...' : `Transfer Selected (${selectedIds.length})`}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBulkDeleteSelected}
+              disabled={deleting}
+              className="flex items-center gap-2 px-4 py-2.5 bg-danger/10 border border-danger/20 rounded-lg text-sm font-medium text-danger hover:bg-danger/20 transition-all duration-300 disabled:opacity-50"
+            >
+              <Trash2 size={16} />
+              <span className="hidden sm:inline">{deleting ? 'Deleting...' : `Delete (${selectedIds.length})`}</span>
+            </button>
+            <button
+              onClick={handleBulkTransfer}
+              disabled={transferring}
+              className="flex items-center gap-2 px-5 py-2.5 bg-accent text-bg-primary font-bold rounded-lg hover:bg-accent-hover transition-all duration-300 disabled:opacity-50"
+            >
+              <ArrowRightLeft size={16} />
+              <span>{transferring ? 'Transferring...' : `Transfer Selected (${selectedIds.length})`}</span>
+            </button>
+          </div>
         )}
       </div>
 

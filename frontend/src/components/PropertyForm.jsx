@@ -11,7 +11,8 @@ export default function PropertyForm({ initialData, onSave, onCancel }) {
     tenant_name: '', tenant_phone: '', tenant_email: '',
     apartment_unit: '', rent_amount: '', security_deposit: '',
     lease_start: '', lease_end: '', payment_status: 'Pending',
-    documents: [], payment_schedule: [], images: [], property_status: 'Rented'
+    notes: '',
+    payment_schedule: [], property_status: 'Rented'
   };
 
   const [form, setForm] = useState(initialData || emptyProperty);
@@ -49,69 +50,7 @@ export default function PropertyForm({ initialData, onSave, onCancel }) {
     setForm({ ...form, payment_schedule: newSchedule });
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      return toast('Image size should be less than 5MB', 'error');
-    }
-
-    const formData = new FormData();
-    formData.append('image', file);
-
-    setUploadingImage(true);
-    try {
-      const res = await api.post('/upload/image', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      if (res.data.imageUrl) {
-        setForm(prev => ({
-          ...prev,
-          images: [...(prev.images || []), res.data.imageUrl]
-        }));
-        toast('Image uploaded', 'success');
-      }
-    } catch (err) {
-      toast(err.response?.data?.error || 'Failed to upload image', 'error');
-    } finally {
-      setUploadingImage(false);
-      e.target.value = '';
-    }
-  };
-
-  const handleDocumentUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      return toast('Document size should be less than 10MB', 'error');
-    }
-
-    const docName = prompt("Enter a name for this document (e.g., Passport, Lease Agreement):") || file.name;
-
-    const formData = new FormData();
-    formData.append('document', file);
-
-    setUploadingDoc(true);
-    try {
-      const res = await api.post('/upload/document', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      if (res.data.documentUrl) {
-        setForm(prev => ({
-          ...prev,
-          documents: [...(prev.documents || []), { name: docName, url: res.data.documentUrl }]
-        }));
-        toast('Document uploaded', 'success');
-      }
-    } catch (err) {
-      toast(err.response?.data?.error || 'Failed to upload document', 'error');
-    } finally {
-      setUploadingDoc(false);
-      e.target.value = '';
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -213,6 +152,86 @@ export default function PropertyForm({ initialData, onSave, onCancel }) {
             </select>
           </div>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-text-secondary mb-1.5">Notes / Description</label>
+        <textarea
+          value={form.notes}
+          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          rows={3}
+          className="w-full px-3 py-2.5 bg-bg-elevated border border-border rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/25 transition-all resize-none"
+          placeholder="e.g., Looking for immediate move-in..."
+        />
+      </div>
+
+      {/* Payment Schedule */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-green-500 uppercase tracking-wider">Payment Schedule</h3>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-text-muted">Installments:</span>
+            <input 
+              type="number" 
+              min="1" 
+              max="48"
+              className="w-16 px-2 py-1 text-xs bg-bg-elevated border border-border rounded text-text-primary focus:outline-none focus:border-accent"
+              placeholder="e.g. 4"
+              id="installment-count-input"
+              defaultValue="4"
+            />
+            <button type="button" onClick={() => {
+              const val = parseInt(document.getElementById('installment-count-input').value) || 1;
+              handleGenerateSchedule(val);
+            }}
+              className="px-3 py-1 bg-accent text-bg-primary rounded text-xs font-medium hover:bg-accent-hover transition-colors">
+              Generate
+            </button>
+          </div>
+        </div>
+        
+        {form.payment_schedule && form.payment_schedule.length > 0 && (
+          <div className="space-y-3 bg-bg-primary p-4 rounded-xl border border-border max-h-60 overflow-y-auto">
+            {form.payment_schedule.map((pmt, idx) => (
+              <div key={idx} className="flex flex-wrap sm:flex-nowrap gap-3 items-center bg-bg-surface p-3 rounded-lg border border-border shadow-sm">
+                <div className="w-16 flex-shrink-0 text-xs font-bold text-text-muted text-center py-1.5 bg-bg-elevated rounded">#{idx + 1}</div>
+                <input type="number" required value={pmt.amount} onChange={(e) => {
+                  const newSched = [...form.payment_schedule];
+                  newSched[idx].amount = e.target.value;
+                  setForm({ ...form, payment_schedule: newSched });
+                }} className={`${inputClass} !py-1.5 !text-sm`} placeholder="Amount" />
+                <input type="date" required value={pmt.due_date} onChange={(e) => {
+                  const newSched = [...form.payment_schedule];
+                  newSched[idx].due_date = e.target.value;
+                  setForm({ ...form, payment_schedule: newSched });
+                }} className={`${inputClass} !py-1.5 !text-sm w-36`} />
+                <select value={pmt.payment_mode} onChange={(e) => {
+                  const newSched = [...form.payment_schedule];
+                  newSched[idx].payment_mode = e.target.value;
+                  setForm({ ...form, payment_schedule: newSched });
+                }} className={`${inputClass} !py-1.5 !text-sm w-28`}>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Transfer">Transfer</option>
+                </select>
+                <select value={pmt.status} onChange={(e) => {
+                  const newSched = [...form.payment_schedule];
+                  newSched[idx].status = e.target.value;
+                  setForm({ ...form, payment_schedule: newSched });
+                }} className={`${inputClass} !py-1.5 !text-sm w-28 font-medium ${pmt.status === 'Paid' ? 'text-success' : 'text-warning'}`}>
+                  <option value="Due">Due</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Overdue">Overdue</option>
+                </select>
+              </div>
+            ))}
+          </div>
+        )}
+        {(!form.payment_schedule || form.payment_schedule.length === 0) && (
+          <div className="text-center py-6 bg-bg-primary rounded-xl border border-border border-dashed text-text-muted text-sm">
+            No payment schedule generated. Click a number above to split the rent.
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end gap-3 pt-2">

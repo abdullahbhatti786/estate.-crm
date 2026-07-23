@@ -14,6 +14,7 @@ const emptyProperty = {
   tenant_name: '', tenant_phone: '', tenant_email: '',
   apartment_unit: '', rent_amount: '', security_deposit: '',
   lease_start: '', lease_end: '', payment_status: 'Pending',
+  notes: '',
   payment_schedule: [], images: [], documents: []
 };
 
@@ -119,6 +120,10 @@ export default function Properties() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 3.5 * 1024 * 1024) {
+      return toast('Image size should be less than 3.5MB', 'error');
+    }
+
     const formData = new FormData();
     formData.append('image', file);
 
@@ -146,6 +151,10 @@ export default function Properties() {
     const file = e.target.files?.[0];
     if (!file) return;
     
+    if (file.size > 3.5 * 1024 * 1024) {
+      return toast('Document size should be less than 3.5MB', 'error');
+    }
+
     const docName = prompt('Enter a name for this document (e.g., Emirates ID, Lease Contract):', file.name) || file.name;
 
     const formData = new FormData();
@@ -287,6 +296,9 @@ export default function Properties() {
       ) : <span className="text-xs text-text-muted">—</span>;
     }},
     { key: 'apartment_unit', header: 'Unit', render: (val) => <span className="font-medium">{val}</span> },
+    { key: 'notes', header: 'Notes', render: (val) => (
+      <span className="max-w-[150px] truncate block text-text-secondary">{val || '—'}</span>
+    )},
     { key: 'owner_name', header: 'Owner' },
     { key: 'owner_phone', header: 'Owner Phone' },
     { key: 'tenant_name', header: 'Tenant' },
@@ -468,6 +480,17 @@ export default function Properties() {
                 </select>
               </div>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1.5">Notes / Description</label>
+            <textarea
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2.5 bg-bg-elevated border border-border rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/25 transition-all resize-none"
+              placeholder="e.g., Looking for immediate move-in..."
+            />
           </div>
 
           {/* Images Section */}

@@ -14,6 +14,7 @@ const propertySchema = new mongoose.Schema({
   lease_end: { type: Date },
   payment_status: { type: String, required: true, default: 'Pending' },
   property_status: { type: String, required: true, default: 'Rented' },
+  notes: { type: String },
   images: { type: [String], default: [] },
   documents: { type: [mongoose.Schema.Types.Mixed], default: [] },
   payment_schedule: { type: [mongoose.Schema.Types.Mixed], default: [] },
