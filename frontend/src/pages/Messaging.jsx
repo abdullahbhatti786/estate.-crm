@@ -255,17 +255,26 @@ export default function Messaging() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         {/* Column 1: Contact Selection */}
-        <div className="xl:col-span-1">
-          <div className="flex items-center gap-2 mb-3">
-            <label className="text-sm font-medium text-text-secondary">Select from:</label>
-            <select
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              className="px-3 py-1.5 bg-bg-elevated border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent/50 transition-all"
+        <div className="space-y-4 xl:col-span-1 border-r border-border/50 pr-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-text-secondary">Select from:</label>
+              <select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                className="px-3 py-1.5 bg-bg-elevated border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent/50 transition-all"
+              >
+                <option value="leads">Leads</option>
+                <option value="properties">Properties (Tenants)</option>
+              </select>
+            </div>
+            <button 
+              onClick={fetchContacts} 
+              className="p-1.5 text-text-muted hover:text-accent bg-bg-elevated border border-border rounded-lg transition-colors"
+              title="Refresh Contacts List"
             >
-              <option value="leads">Leads</option>
-              <option value="properties">Properties (Tenants)</option>
-            </select>
+              <RefreshCw size={16} className={loading ? "animate-spin text-accent" : ""} />
+            </button>
           </div>
 
           <DataTable
