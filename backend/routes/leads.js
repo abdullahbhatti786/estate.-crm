@@ -115,6 +115,25 @@ router.put('/bulk/transfer', async (req, res) => {
   }
 });
 
+// DELETE /api/leads/bulk/delete
+router.delete('/bulk/delete', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(400).json({ error: 'ids array is required' });
+    }
+
+    await Lead.updateMany(
+      { _id: { $in: ids } },
+      { $set: { is_deleted: 1 } }
+    );
+
+    res.json({ success: true, message: 'Leads deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // DELETE /api/leads/:id
 router.delete('/:id', async (req, res) => {
   try {

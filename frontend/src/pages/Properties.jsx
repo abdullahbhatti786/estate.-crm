@@ -23,30 +23,34 @@ export default function Properties() {
   const [pages, setPages] = useState(1);
   const [search, setSearch] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('Rented');
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyProperty);
   const [saving, setSaving] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [deleting, setDeleting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
 
   const fetchProperties = useCallback(async () => {
     setLoading(true);
+    setSelectedIds([]);
     try {
       const res = await api.get('/properties', {
-        params: { search, payment_status: paymentFilter, property_status: 'Rented', page, limit: 20 }
+        params: { search, payment_status: paymentFilter, property_status: statusFilter, page, limit: 20 }
       });
       setProperties(res.data.properties);
       setTotal(res.data.total);
-      setPages(res.data.pages);
+      setPages(res.data.totalPages || res.data.pages);
     } catch {
       toast('Failed to load properties', 'error');
     } finally {
       setLoading(false);
     }
-  }, [search, paymentFilter, page]);
+  }, [search, paymentFilter, statusFilter, page]);
 
   useEffect(() => { fetchProperties(); }, [fetchProperties]);
 
@@ -61,7 +65,6 @@ export default function Properties() {
 
   const openEdit = async (prop) => {
     setEditing(prop);
-    // Basic fields immediately
     setForm({
       owner_name: prop.owner_name || '', owner_phone: prop.owner_phone || '', owner_email: prop.owner_email || '',
       tenant_name: prop.tenant_name || '', tenant_phone: prop.tenant_phone || '', tenant_email: prop.tenant_email || '',
@@ -99,7 +102,6 @@ export default function Properties() {
     }
     const amountPerPayment = (rent / numPayments).toFixed(2);
     const newSchedule = Array.from({ length: numPayments }).map((_, i) => {
-      // Very basic date generation based on start date + months
       let d = new Date(form.lease_start || new Date());
       d.setMonth(d.getMonth() + (i * (12 / numPayments)));
       return {
@@ -135,7 +137,7 @@ export default function Properties() {
       toast(err.response?.data?.error || 'Failed to upload image', 'error');
     } finally {
       setUploadingImage(false);
-      e.target.value = ''; // Reset input
+      e.target.value = '';
     }
   };
 
@@ -164,14 +166,13 @@ export default function Properties() {
       toast(err.response?.data?.error || 'Failed to upload document', 'error');
     } finally {
       setUploadingDoc(false);
-      e.target.value = ''; // Reset input
+      e.target.value = '';
     }
   };
 
   const handleDownloadImage = async (url) => {
     let fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${url}`;
     
-    // Cloudinary download fix (use backend proxy to bypass CORS and force native download)
     if (fullUrl.includes('res.cloudinary.com')) {
       fullUrl = fullUrl.replace('/fl_attachment', '');
       const proxyUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/proxy-download?url=${encodeURIComponent(fullUrl)}`;
@@ -226,7 +227,30 @@ export default function Properties() {
       await api.delete(`/properties/${id}`);
       toast('Property deleted', 'success');
       fetchProperties();
-    } catch { toast('Failed to delete', 'error'); }
+    } catch (err) {
+      toast('Failed to delete property', 'error');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedIds.length} properties?`)) return;
+
+    setDeleting(true);
+    try {
+      await api.delete('/properties/bulk/delete', { data: { ids: selectedIds } });
+      toast('Properties deleted successfully', 'success');
+      setSelectedIds([]);
+      fetchProperties();
+    } catch (err) {
+      toast(err.response?.data?.error || 'Failed to delete properties', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleExport = () => {
+    window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/properties/export`, '_blank');
   };
 
   const formatAED = (val) => {
@@ -305,15 +329,34 @@ export default function Properties() {
           <p className="text-sm text-text-muted mt-1">Track owners, tenants, and lease contracts</p>
         </div>
         <div className="flex items-center gap-2">
-          <select
-            value={paymentFilter}
-            onChange={(e) => { setPaymentFilter(e.target.value); setPage(1); }}
-            className="px-4 py-2.5 bg-bg-surface border border-border rounded-lg text-sm font-medium text-text-primary focus:outline-none focus:border-accent/50 transition-all"
+          <select 
+            value={statusFilter} 
+            onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
+            className="w-full sm:w-auto px-4 py-2 bg-bg-surface border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent/50"
+          >
+            {PROPERTY_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <select 
+            value={paymentFilter} 
+            onChange={e => { setPaymentFilter(e.target.value); setPage(1); }}
+            className="w-full sm:w-auto px-4 py-2 bg-bg-surface border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent/50"
           >
             <option value="All">All Payments</option>
             {PAYMENT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          <button onClick={() => window.open('/api/upload/export/properties', '_blank')}
+
+          {selectedIds.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              disabled={deleting}
+              className="flex items-center gap-2 px-4 py-2.5 bg-danger/10 border border-danger/20 rounded-lg text-sm font-medium text-danger hover:bg-danger/20 transition-all disabled:opacity-50"
+            >
+              <Trash2 size={16} />
+              <span className="hidden sm:inline">{deleting ? 'Deleting...' : `Delete (${selectedIds.length})`}</span>
+            </button>
+          )}
+
+          <button onClick={handleExport}
             className="flex items-center gap-2 px-4 py-2.5 bg-bg-surface border border-border rounded-lg text-sm font-medium text-text-primary hover:bg-bg-hover transition-all">
             <Download size={16} /><span className="hidden sm:inline">Export</span>
           </button>
@@ -336,8 +379,8 @@ export default function Properties() {
         loading={loading}
         emptyMessage="No property records found."
         selectable={true}
-        selectedIds={[]}
-        onSelectionChange={() => {}}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
         actions={(row) => (
           <div className="flex items-center gap-1 justify-end">
             <button onClick={() => openEdit(row)} className="p-2 rounded-lg text-text-muted hover:text-accent hover:bg-accent-dim transition-all"><Pencil size={15} /></button>

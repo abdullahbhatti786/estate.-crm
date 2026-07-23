@@ -22,16 +22,19 @@ export default function Leads() {
   const [editingLead, setEditingLead] = useState(null);
   const [form, setForm] = useState(emptyLead);
   const [saving, setSaving] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
+    setSelectedIds([]);
     try {
       const res = await api.get('/leads', {
         params: { search, status: statusFilter, page, limit: 20 }
       });
       setLeads(res.data.leads);
       setTotal(res.data.total);
-      setPages(res.data.pages);
+      setPages(res.data.totalPages || res.data.pages);
     } catch (err) {
       toast('Failed to load leads', 'error');
     } finally {
@@ -104,6 +107,23 @@ export default function Leads() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedIds.length} leads?`)) return;
+
+    setDeleting(true);
+    try {
+      await api.delete('/leads/bulk/delete', { data: { ids: selectedIds } });
+      toast('Leads deleted successfully', 'success');
+      setSelectedIds([]);
+      fetchLeads();
+    } catch (err) {
+      toast(err.response?.data?.error || 'Failed to delete leads', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handleExport = () => {
     window.open('/api/upload/export/leads', '_blank');
   };
@@ -150,6 +170,17 @@ export default function Leads() {
             {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
 
+          {selectedIds.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              disabled={deleting}
+              className="flex items-center gap-2 px-4 py-2.5 bg-danger/10 border border-danger/20 rounded-lg text-sm font-medium text-danger hover:bg-danger/20 transition-all disabled:opacity-50"
+            >
+              <Trash2 size={16} />
+              <span className="hidden sm:inline">{deleting ? 'Deleting...' : `Delete (${selectedIds.length})`}</span>
+            </button>
+          )}
+
           <button
             onClick={handleExport}
             className="flex items-center gap-2 px-4 py-2.5 bg-bg-surface border border-border rounded-lg text-sm font-medium text-text-primary hover:bg-bg-hover transition-all"
@@ -181,8 +212,8 @@ export default function Leads() {
         loading={loading}
         emptyMessage="No leads found. Add your first lead!"
         selectable={true}
-        selectedIds={[]}
-        onSelectionChange={() => {}}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
         actions={(row) => (
           <div className="flex items-center gap-1 justify-end">
             <button

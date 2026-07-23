@@ -5,20 +5,95 @@ import { toast } from '../components/Toast';
 import { ArrowRightLeft } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 
+import { FileText } from 'lucide-react';
+
+const formatAED = (val) => {
+  if (!val && val !== 0) return '—';
+  return `AED ${Number(val).toLocaleString()}`;
+};
+
 const LEAD_COLUMNS = [
-  { key: 'name', header: 'Name', render: (val) => <span className="font-semibold">{val}</span> },
+  { key: 'name', header: 'Name', render: (val) => <span className="font-medium">{val}</span> },
   { key: 'phone', header: 'Phone' },
-  { key: 'email', header: 'Email' },
+  { key: 'email', header: 'Email', render: (val) => val || <span className="text-text-muted">—</span> },
+  { key: 'description', header: 'Notes', render: (val) => (
+    <span className="max-w-[200px] truncate block text-text-secondary">{val || '—'}</span>
+  )},
+  { key: 'follow_up_date', header: 'Follow-up', render: (val) => {
+    if (!val) return <span className="text-text-muted">—</span>;
+    const date = new Date(val);
+    const isPast = date < new Date();
+    return (
+      <span className={`text-xs font-medium px-2 py-1 rounded border whitespace-nowrap ${isPast ? 'bg-danger/10 text-danger border-danger/20' : 'bg-warning/10 text-warning border-warning/20'}`}>
+        {date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+      </span>
+    );
+  }},
   { key: 'status', header: 'Status', render: (val) => <StatusBadge status={val} /> },
-  { key: 'source', header: 'Source' },
+  { key: 'source', header: 'Source', render: (val) => <StatusBadge status={val} /> },
+  { key: 'created_at', header: 'Added', render: (val) => (
+    <span className="text-text-muted text-xs">{new Date(val).toLocaleDateString()}</span>
+  )},
 ];
 
 const PROPERTY_COLUMNS = [
-  { key: 'owner_name', header: 'Owner', render: (val) => <span className="font-semibold">{val}</span> },
-  { key: 'apartment_unit', header: 'Unit' },
-  { key: 'rent_amount', header: 'Rent', render: (val) => `$${val?.toLocaleString()}` },
-  { key: 'payment_status', header: 'Payment', render: (val) => <StatusBadge status={val} /> },
-  { key: 'property_status', header: 'Status', render: (val) => <StatusBadge status={val} /> }
+  { 
+    key: 'image', 
+    header: 'Image', 
+    render: (_, row) => (
+      <div className="w-10 h-10 rounded-lg overflow-hidden bg-bg-elevated border border-border shrink-0 flex items-center justify-center">
+        {row.images && row.images.length > 0 ? (
+          <img 
+            src={row.images[0].startsWith('http') ? row.images[0] : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${row.images[0]}`} 
+            alt="Property" 
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="text-xs text-text-muted">No Img</span>
+        )}
+      </div>
+    )
+  },
+  { key: 'docs_count', header: 'Docs', render: (_, row) => {
+    const count = row.documents?.length || 0;
+    return count > 0 ? (
+      <div className="flex items-center gap-1 text-xs font-medium text-accent bg-accent/10 px-2 py-1 rounded w-fit">
+        <FileText size={12} /> {count}
+      </div>
+    ) : <span className="text-xs text-text-muted">—</span>;
+  }},
+  { key: 'apartment_unit', header: 'Unit', render: (val) => <span className="font-medium">{val}</span> },
+  { key: 'owner_name', header: 'Owner' },
+  { key: 'owner_phone', header: 'Owner Phone' },
+  { key: 'tenant_name', header: 'Tenant' },
+  { key: 'tenant_phone', header: 'Tenant Phone' },
+  { key: 'rent_amount', header: 'Rent', render: (val) => <span className="font-medium text-accent">{formatAED(val)}</span> },
+  { key: 'security_deposit', header: 'Deposit', render: (val) => <span className="text-text-secondary">{formatAED(val)}</span> },
+  { key: 'lease_start', header: 'Start', render: (val) => <span className="text-xs text-text-muted">{val ? val.split('T')[0] : '—'}</span> },
+  { key: 'lease_end', header: 'End', render: (val) => {
+    if (!val) return <span className="text-xs text-text-muted">—</span>;
+    const dateStr = val.split('T')[0];
+    const days = Math.ceil((new Date(val) - new Date()) / (1000 * 60 * 60 * 24));
+    return (
+      <span className={`text-xs font-medium ${days <= 0 ? 'text-danger' : days <= 30 ? 'text-warning' : 'text-text-muted'}`}>
+        {dateStr} {days <= 30 && days > 0 ? `(${days}d)` : days <= 0 ? '(Expired)' : ''}
+      </span>
+    );
+  }},
+  { key: 'payment_status', header: 'Payment', render: (val, row) => {
+    const schedule = row.payment_schedule || [];
+    if (schedule.length > 0) {
+      const total = schedule.length;
+      const paid = schedule.filter(p => p.status === 'Paid').length;
+      const isAllPaid = paid === total;
+      return (
+        <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium border ${isAllPaid ? 'bg-success/10 text-success border-success/20' : 'bg-warning/10 text-warning border-warning/20'}`}>
+          {paid} / {total} Paid
+        </span>
+      );
+    }
+    return <StatusBadge status={val} />;
+  }},
 ];
 
 export default function DataWorking() {
