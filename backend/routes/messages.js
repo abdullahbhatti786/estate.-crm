@@ -173,11 +173,23 @@ router.get('/logs', async (req, res) => {
 });
 
 // GET /api/messages/status — Check service status
-router.get('/status', (req, res) => {
-  res.json({
-    whatsapp: whatsappService.getStatus(),
-    email: emailService.getStatus()
-  });
+router.get('/status', async (req, res) => {
+  try {
+    const user = await User.findById(req.session.user.id);
+    const credentials = {
+      email: user?.gmail_email,
+      password: user?.gmail_app_password,
+      phoneNumberId: user?.whatsapp_phone_number_id,
+      accessToken: user?.whatsapp_access_token
+    };
+
+    res.json({
+      whatsapp: whatsappService.getStatus(credentials),
+      email: emailService.getStatus(credentials)
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
