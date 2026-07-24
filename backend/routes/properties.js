@@ -1,5 +1,7 @@
 const express = require('express');
 const Property = require('../models/Property');
+const PaymentInstallment = require('../models/PaymentInstallment');
+const authMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -84,6 +86,18 @@ router.post('/', async (req, res) => {
       is_data_working: req.body.is_data_working === true,
       created_by: req.session.user?.id
     });
+
+    if (req.body.payment_schedule && Array.isArray(req.body.payment_schedule) && req.body.payment_schedule.length > 0) {
+      const installments = req.body.payment_schedule.map(p => ({
+        property_id: property._id,
+        amount: p.amount || property.rent_amount,
+        due_date: new Date(p.date || new Date()),
+        payment_mode: p.mode || 'Cheque',
+        status: p.status || 'Due'
+      }));
+      await PaymentInstallment.insertMany(installments);
+    }
+
     res.status(201).json({ success: true, property });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -95,6 +109,21 @@ router.put('/:id', async (req, res) => {
   try {
     const property = await Property.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!property || property.is_deleted) return res.status(404).json({ error: 'Property not found' });
+
+    if (req.body.payment_schedule && Array.isArray(req.body.payment_schedule)) {
+      await PaymentInstallment.deleteMany({ property_id: property._id });
+      if (req.body.payment_schedule.length > 0) {
+        const installments = req.body.payment_schedule.map(p => ({
+          property_id: property._id,
+          amount: p.amount || property.rent_amount,
+          due_date: new Date(p.date || new Date()),
+          payment_mode: p.mode || 'Cheque',
+          status: p.status || 'Due'
+        }));
+        await PaymentInstallment.insertMany(installments);
+      }
+    }
+
     res.json({ success: true, property });
   } catch (err) {
     res.status(500).json({ error: err.message });
