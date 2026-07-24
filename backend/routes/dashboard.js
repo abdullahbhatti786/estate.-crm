@@ -16,9 +16,11 @@ router.get('/stats', async (req, res) => {
     let propQuery = { is_deleted: 0 };
     let msgQuery = {};
 
-    leadQuery.created_by = userId;
-    propQuery.created_by = userId;
-    msgQuery.sent_by = userId;
+    if (role !== 'admin' && role !== 'Administrator') {
+      leadQuery.created_by = userId;
+      propQuery.created_by = userId;
+      msgQuery.sent_by = userId;
+    }
 
     const totalLeads = await Lead.countDocuments(leadQuery);
     
@@ -109,8 +111,10 @@ router.get('/notifications', async (req, res) => {
     let leadQuery = { is_deleted: 0 };
     let propQuery = { is_deleted: 0 };
     // Enforce isolation
-    leadQuery.created_by = userId;
-    propQuery.created_by = userId;
+    if (role !== 'admin' && role !== 'Administrator') {
+      leadQuery.created_by = userId;
+      propQuery.created_by = userId;
+    }
 
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
