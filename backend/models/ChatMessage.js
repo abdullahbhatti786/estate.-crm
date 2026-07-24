@@ -6,6 +6,8 @@ const chatMessageSchema = new mongoose.Schema({
   message: { type: String, required: true },
   message_id: { type: String }, // Meta WhatsApp message ID
   status: { type: String, default: 'sent' }, // sent, delivered, read (for agent messages)
+  media_url: { type: String }, // URL to media file if any
+  media_type: { type: String }, // 'image', 'audio', 'video', 'document'
   timestamp: { type: Date, default: Date.now }
 }, { timestamps: { createdAt: 'created_at', updatedAt: false } });
 

@@ -4,6 +4,7 @@ const ChatThread = require('../models/ChatThread');
 const ChatMessage = require('../models/ChatMessage');
 const Lead = require('../models/Lead');
 const Property = require('../models/Property');
+const whatsappService = require('../services/whatsappService');
 
 const router = express.Router();
 
@@ -43,18 +44,35 @@ router.post('/whatsapp', async (req, res) => {
         const fromNumber = message.from; // The number the message was sent FROM (Lead's number)
         const messageId = message.id;
         
-        let messageText = '';
-        if (message.type === 'text') {
-          messageText = message.text.body;
-        } else {
-          messageText = `[${message.type} message]`; // Handle audio/image later if needed
-        }
-
         // Find which User owns this phone_number_id
         const user = await User.findOne({ whatsapp_phone_number_id: phoneNumberId });
         if (!user) {
           console.log(`⚠️ Webhook received for unknown phone_number_id: ${phoneNumberId}`);
           return res.sendStatus(200);
+        }
+
+        let messageText = '';
+        let mediaUrl = null;
+        let mediaType = null;
+
+        if (message.type === 'text') {
+          messageText = message.text.body;
+        } else if (['audio', 'image', 'video', 'document'].includes(message.type)) {
+          const mediaId = message[message.type]?.id;
+          if (mediaId && user.whatsapp_access_token) {
+            const mediaData = await whatsappService.downloadAndUploadMedia(mediaId, user.whatsapp_access_token);
+            if (mediaData) {
+              mediaUrl = mediaData.media_url;
+              mediaType = mediaData.media_type;
+              messageText = `[${mediaType}]`;
+            } else {
+              messageText = `[Failed to download ${message.type}]`;
+            }
+          } else {
+            messageText = `[${message.type} message]`;
+          }
+        } else {
+          messageText = `[${message.type} message]`;
         }
 
         // Check if we know this contact (Lead or Tenant) belonging to this user
@@ -90,7 +108,9 @@ router.post('/whatsapp', async (req, res) => {
           sender: 'lead',
           message: messageText,
           message_id: messageId,
-          status: 'delivered'
+          status: 'delivered',
+          media_url: mediaUrl,
+          media_type: mediaType
         });
 
         console.log(`📩 New message from ${contactName} to ${user.full_name}: ${messageText}`);
