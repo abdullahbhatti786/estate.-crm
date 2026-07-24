@@ -147,6 +147,35 @@ app.get('/api/debug-db2', async (req, res) => {
   }
 });
 
+app.get('/api/debug-db3', async (req, res) => {
+  try {
+    const PI = require('./models/PaymentInstallment');
+    const Property = require('./models/Property');
+    const User = require('./models/User');
+    
+    const users = await User.find({}, 'name role email');
+    
+    // For each property, print created_by, status, and its PIs
+    const props = await Property.find({ is_deleted: 0 }).lean();
+    
+    const results = [];
+    for (let p of props) {
+      const pis = await PI.find({ property_id: p._id }).lean();
+      results.push({
+        unit: p.apartment_unit,
+        tenant: p.tenant_name,
+        created_by: p.created_by,
+        pis_count: pis.length,
+        statuses: pis.map(x => x.status)
+      });
+    }
+
+    res.json({ users, properties: results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Serve frontend for all other routes in production (SPA fallback)
 if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
