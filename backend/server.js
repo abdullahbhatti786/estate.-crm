@@ -116,6 +116,37 @@ app.get('/api/debug-db', async (req, res) => {
   }
 });
 
+app.get('/api/debug-db2', async (req, res) => {
+  try {
+    const PI = require('./models/PaymentInstallment');
+    const Property = require('./models/Property');
+    
+    const propQuery = { is_deleted: 0 };
+    const propertyIds = (await Property.find(propQuery).select('_id')).map(p => p._id);
+    
+    const upcomingPaymentsRaw = await PI.find({
+      property_id: { $in: propertyIds },
+      status: { $in: ['Due', 'Overdue', 'Pending'] }
+    })
+    .populate('property_id', 'apartment_unit tenant_name')
+    .lean();
+    
+    const allPIs = await PI.find({ status: { $in: ['Due', 'Overdue', 'Pending'] } })
+    .populate('property_id', 'apartment_unit tenant_name')
+    .lean();
+
+    res.json({
+      propertyIdsFound: propertyIds.length,
+      upcomingPaymentsMatched: upcomingPaymentsRaw.length,
+      upcomingPaymentsRaw,
+      allDuePaymentsInDB: allPIs.length,
+      allDuePayments: allPIs
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Serve frontend for all other routes in production (SPA fallback)
 if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
