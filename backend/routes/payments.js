@@ -1,5 +1,6 @@
 const express = require('express');
 const PaymentInstallment = require('../models/PaymentInstallment');
+const Property = require('../models/Property');
 
 const router = express.Router();
 
@@ -47,6 +48,16 @@ router.put('/:id/status', async (req, res) => {
       return res.status(404).json({ error: 'Payment not found' });
     }
     
+    // Sync back to Property
+    const allInstallments = await PaymentInstallment.find({ property_id: payment.property_id }).sort({ due_date: 1 });
+    const mappedSchedule = allInstallments.map(p => ({
+      amount: p.amount,
+      date: p.due_date,
+      mode: p.payment_mode,
+      status: p.status
+    }));
+    await Property.findByIdAndUpdate(payment.property_id, { payment_schedule: mappedSchedule });
+    
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -69,6 +80,16 @@ router.put('/:id', async (req, res) => {
     if (!payment) {
       return res.status(404).json({ error: 'Payment not found' });
     }
+    
+    // Sync back to Property
+    const allInstallments = await PaymentInstallment.find({ property_id: payment.property_id }).sort({ due_date: 1 });
+    const mappedSchedule = allInstallments.map(p => ({
+      amount: p.amount,
+      date: p.due_date,
+      mode: p.payment_mode,
+      status: p.status
+    }));
+    await Property.findByIdAndUpdate(payment.property_id, { payment_schedule: mappedSchedule });
     
     res.json({ success: true, payment });
   } catch (err) {
