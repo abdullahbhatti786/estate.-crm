@@ -66,8 +66,7 @@ router.get('/stats', async (req, res) => {
     const propertyIds = (await Property.find(propQuery).select('_id')).map(p => p._id);
     const upcomingPaymentsRaw = await PaymentInstallment.find({
       property_id: { $in: propertyIds },
-      status: { $in: ['Due', 'Overdue'] },
-      due_date: { $lte: thirtyDaysFromNow }
+      status: { $in: ['Due', 'Overdue'] }
     })
     .populate('property_id', 'apartment_unit tenant_name owner_name')
     .sort({ due_date: 1 });

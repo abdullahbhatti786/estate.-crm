@@ -390,6 +390,7 @@ export default function Properties() {
         pages={pages}
         onPageChange={setPage}
         onSearch={handleSearch}
+        searchValue={search}
         searchPlaceholder="Search properties..."
         loading={loading}
         emptyMessage="No property records found."

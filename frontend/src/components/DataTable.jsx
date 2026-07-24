@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 export default function DataTable({
@@ -20,6 +20,10 @@ export default function DataTable({
   loading = false
 }) {
   const [localSearch, setLocalSearch] = useState(searchValue);
+
+  useEffect(() => {
+    setLocalSearch(searchValue);
+  }, [searchValue]);
 
   const handleSearch = (val) => {
     setLocalSearch(val);
