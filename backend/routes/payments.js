@@ -7,12 +7,8 @@ const router = express.Router();
 // GET /api/payments/upcoming
 router.get('/upcoming', async (req, res) => {
   try {
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-
     const payments = await PaymentInstallment.find({
-      status: { $in: ['Due', 'Overdue'] },
-      due_date: { $lte: thirtyDaysFromNow }
+      status: { $in: ['Due', 'Overdue'] }
     })
     .populate('property_id', 'apartment_unit tenant_name owner_name')
     .sort({ due_date: 1 });
