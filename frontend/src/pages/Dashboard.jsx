@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import Modal from '../components/Modal';
 import StatsCard from '../components/StatsCard';
 import StatusBadge from '../components/StatusBadge';
 import DashboardCalendar from '../components/DashboardCalendar';
-import { Users, Building2, Send, Calendar, MoreHorizontal, ArrowRight, Clock } from 'lucide-react';
+import { Users, Building2, Send, Calendar, MoreHorizontal, ArrowRight, Clock, Edit2 } from 'lucide-react';
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editingPayment, setEditingPayment] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,13 +28,14 @@ export default function Dashboard() {
     }
   };
 
-  const handleMarkAsPaid = async (paymentId) => {
+  const handleSavePayment = async (e) => {
+    e.preventDefault();
     try {
-      await api.put(`/payments/${paymentId}/status`, { status: 'Paid' });
-      // Refresh stats to remove it from upcoming
+      await api.put(`/payments/${editingPayment.id}`, editingPayment);
+      setEditingPayment(null);
       fetchStats();
     } catch (err) {
-      console.error('Failed to mark as paid', err);
+      console.error('Failed to update payment', err);
     }
   };
 
@@ -184,8 +187,8 @@ export default function Dashboard() {
                         </span>
                       </td>
                       <td className="px-5 py-3 text-right">
-                        <button onClick={() => handleMarkAsPaid(p.id)} className="px-3 py-1.5 bg-success/10 text-success hover:bg-success hover:text-white rounded text-xs font-medium transition-colors">
-                          Mark as Paid
+                        <button onClick={() => setEditingPayment(p)} className="px-3 py-1.5 bg-accent/10 text-accent hover:bg-accent hover:text-white rounded text-xs font-medium transition-colors flex items-center gap-1.5 ml-auto">
+                          <Edit2 size={14} /> Edit
                         </button>
                       </td>
                     </tr>
@@ -203,6 +206,61 @@ export default function Dashboard() {
           <DashboardCalendar />
         </div>
       </div>
+
+      <Modal isOpen={!!editingPayment} onClose={() => setEditingPayment(null)} title="Edit Payment">
+        {editingPayment && (
+          <form onSubmit={handleSavePayment} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">Amount (AED)</label>
+              <input 
+                type="number" 
+                value={editingPayment.amount} 
+                onChange={(e) => setEditingPayment({ ...editingPayment, amount: e.target.value })}
+                className="w-full bg-bg-surface border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-text-primary" 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">Due Date</label>
+              <input 
+                type="date" 
+                value={new Date(editingPayment.due_date).toISOString().split('T')[0]} 
+                onChange={(e) => setEditingPayment({ ...editingPayment, due_date: e.target.value })}
+                className="w-full bg-bg-surface border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-text-primary" 
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">Status</label>
+                <select 
+                  value={editingPayment.status} 
+                  onChange={(e) => setEditingPayment({ ...editingPayment, status: e.target.value })}
+                  className="w-full bg-bg-surface border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-text-primary"
+                >
+                  <option value="Due">Due</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Overdue">Overdue</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">Mode</label>
+                <select 
+                  value={editingPayment.payment_mode} 
+                  onChange={(e) => setEditingPayment({ ...editingPayment, payment_mode: e.target.value })}
+                  className="w-full bg-bg-surface border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-text-primary"
+                >
+                  <option value="Cheque">Cheque</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Transfer">Bank Transfer</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end pt-4 mt-6 border-t border-border">
+              <button type="button" onClick={() => setEditingPayment(null)} className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary">Cancel</button>
+              <button type="submit" className="px-4 py-2 bg-accent hover:bg-accent-hover text-bg-primary rounded-lg text-sm font-medium transition-colors shadow-lg shadow-accent/20">Save Changes</button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 }

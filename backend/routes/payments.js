@@ -53,4 +53,27 @@ router.put('/:id/status', async (req, res) => {
   }
 });
 
+// PUT /api/payments/:id
+router.put('/:id', async (req, res) => {
+  try {
+    const { amount, due_date, status, payment_mode } = req.body;
+    
+    const updateData = {};
+    if (amount !== undefined) updateData.amount = amount;
+    if (due_date !== undefined) updateData.due_date = new Date(due_date);
+    if (status !== undefined) updateData.status = status;
+    if (payment_mode !== undefined) updateData.payment_mode = payment_mode;
+
+    const payment = await PaymentInstallment.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+    
+    res.json({ success: true, payment });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
