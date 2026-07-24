@@ -90,9 +90,30 @@ app.use('/api/calendar', authMiddleware, require('./routes/calendar'));
 app.use('/api/ai', authMiddleware, require('./routes/ai'));
 app.use('/api/chat', authMiddleware, require('./routes/chat'));
 
-// Health check
+// Health check route
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', time: new Date() });
+});
+
+app.get('/api/debug-db', async (req, res) => {
+  try {
+    const mongoose = require('mongoose');
+    const PI = require('./models/PaymentInstallment');
+    const Property = require('./models/Property');
+    
+    const countPI = await PI.countDocuments();
+    const countProp = await Property.countDocuments();
+    
+    const samplePIs = await PI.find().limit(10).lean();
+    
+    res.json({
+      countPI,
+      countProp,
+      samplePIs
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Serve frontend for all other routes in production (SPA fallback)
