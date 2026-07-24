@@ -11,6 +11,12 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingPayment, setEditingPayment] = useState(null);
+  
+  // Pagination states
+  const [paymentPage, setPaymentPage] = useState(1);
+  const [leasePage, setLeasePage] = useState(1);
+  const itemsPerPage = 5;
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,6 +44,12 @@ export default function Dashboard() {
       console.error('Failed to update payment', err);
     }
   };
+
+  const currentPayments = stats?.upcomingPayments?.slice((paymentPage - 1) * itemsPerPage, paymentPage * itemsPerPage) || [];
+  const totalPaymentPages = Math.ceil((stats?.upcomingPayments?.length || 0) / itemsPerPage);
+
+  const currentLeases = stats?.expiringSoon?.slice((leasePage - 1) * itemsPerPage, leasePage * itemsPerPage) || [];
+  const totalLeasePages = Math.ceil((stats?.expiringSoon?.length || 0) / itemsPerPage);
 
   if (loading) {
     return (
@@ -135,8 +147,8 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
-              {stats?.expiringSoon?.length > 0 ? (
-                stats.expiringSoon.map((p) => (
+              {currentLeases.length > 0 ? (
+                currentLeases.map((p) => (
                   <tr key={p.id} className="hover:bg-bg-hover/50 transition-colors">
                     <td className="px-5 py-3 font-medium text-text-primary">{p.apartment_unit}</td>
                     <td className="px-5 py-3 text-text-secondary">{p.tenant_name}</td>
@@ -153,6 +165,25 @@ export default function Dashboard() {
               )}
             </tbody>
           </table>
+          {totalLeasePages > 1 && (
+            <div className="px-5 py-3 border-t border-border flex items-center justify-between">
+              <button 
+                disabled={leasePage === 1} 
+                onClick={() => setLeasePage(p => p - 1)}
+                className="text-xs font-medium text-text-secondary disabled:opacity-50 hover:text-text-primary"
+              >
+                Previous
+              </button>
+              <span className="text-xs text-text-muted">Page {leasePage} of {totalLeasePages}</span>
+              <button 
+                disabled={leasePage === totalLeasePages} 
+                onClick={() => setLeasePage(p => p + 1)}
+                className="text-xs font-medium text-text-secondary disabled:opacity-50 hover:text-text-primary"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
         {/* Upcoming Payments */}
         <div className="glass-card overflow-hidden sm:col-span-1 lg:col-span-2">
@@ -172,8 +203,8 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {stats?.upcomingPayments?.length > 0 ? (
-                  stats.upcomingPayments.map(p => (
+                {currentPayments.length > 0 ? (
+                  currentPayments.map(p => (
                     <tr key={p.id} className="hover:bg-bg-hover/50 transition-colors">
                       <td className="px-5 py-3">
                         <div className="font-medium text-text-primary">{p.apartment_unit}</div>
@@ -183,7 +214,7 @@ export default function Dashboard() {
                       <td className="px-5 py-3 text-text-secondary">{p.payment_mode}</td>
                       <td className="px-5 py-3">
                         <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium border bg-bg-primary/50 ${p.status === 'Overdue' ? 'text-danger border-danger/20' : 'text-warning border-warning/20'}`}>
-                          {p.due_date} ({p.status})
+                          {new Date(p.due_date).toLocaleDateString()} ({p.status})
                         </span>
                       </td>
                       <td className="px-5 py-3 text-right">
@@ -199,6 +230,25 @@ export default function Dashboard() {
               </tbody>
             </table>
           </div>
+          {totalPaymentPages > 1 && (
+            <div className="px-5 py-3 border-t border-border flex items-center justify-between bg-bg-surface">
+              <button 
+                disabled={paymentPage === 1} 
+                onClick={() => setPaymentPage(p => p - 1)}
+                className="text-xs font-medium text-text-secondary disabled:opacity-50 hover:text-text-primary"
+              >
+                Previous
+              </button>
+              <span className="text-xs text-text-muted">Page {paymentPage} of {totalPaymentPages}</span>
+              <button 
+                disabled={paymentPage === totalPaymentPages} 
+                onClick={() => setPaymentPage(p => p + 1)}
+                className="text-xs font-medium text-text-secondary disabled:opacity-50 hover:text-text-primary"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Calendar View - Spans full width at the bottom */}
