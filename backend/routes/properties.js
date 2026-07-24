@@ -1,7 +1,6 @@
 const express = require('express');
 const Property = require('../models/Property');
 const PaymentInstallment = require('../models/PaymentInstallment');
-const authMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
