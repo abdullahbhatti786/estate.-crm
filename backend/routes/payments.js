@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/upcoming', async (req, res) => {
   try {
     const payments = await PaymentInstallment.find({
-      status: { $in: ['Due', 'Overdue'] }
+      status: { $in: ['Due', 'Overdue', 'Pending'] }
     })
     .populate('property_id', 'apartment_unit tenant_name owner_name')
     .sort({ due_date: 1 });
