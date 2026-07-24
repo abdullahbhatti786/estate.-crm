@@ -17,10 +17,7 @@ router.get('/', async (req, res) => {
     }
     
     // Enforce data isolation: All users (including admins) only see their own data
-    // UPDATE: Admins should see all data. Agents see their own.
-    if (req.session.user?.role !== 'admin' && req.session.user?.role !== 'Administrator') {
-      query.created_by = req.session.user?.id;
-    }
+    query.created_by = req.session.user?.id;
 
     if (payment_status && payment_status !== 'All') {
       query.payment_status = payment_status;
