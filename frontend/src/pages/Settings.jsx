@@ -98,7 +98,7 @@ export default function Settings() {
               <p className="text-[10px] text-text-muted mt-1">This name will appear as the sender instead of your raw email address.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-secondary mb-1.5">Gmail Address</label>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">Email Address</label>
               <input 
                 type="email" 
                 value={gmailEmail} 
@@ -109,14 +109,14 @@ export default function Settings() {
             </div>
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                App Password {hasGmailPassword && <span className="text-success text-xs ml-2">(Saved ✓)</span>}
+                Brevo API Key {hasGmailPassword && <span className="text-success text-xs ml-2">(Saved ✓)</span>}
               </label>
               <input 
                 type="password" 
                 value={gmailPassword} 
                 onChange={(e) => setGmailPassword(e.target.value)} 
                 className={inputClass} 
-                placeholder={hasGmailPassword ? "Leave blank to keep saved password" : "16-character app password"} 
+                placeholder={hasGmailPassword ? "Leave blank to keep saved API Key" : "xkeysib-..."} 
               />
             </div>
           </div>

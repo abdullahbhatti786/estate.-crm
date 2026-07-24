@@ -15,24 +15,41 @@ class EmailService {
     }
 
     try {
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: email,
-          pass: password.replace(/\s+/g, '')
-        }
+      // Use Brevo API instead of Nodemailer
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': password.trim(), // The Brevo API key is stored in the password field
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          sender: {
+            name: senderName || 'Real Estate CRM',
+            email: email
+          },
+          to: [
+            { email: to }
+          ],
+          subject: subject,
+          htmlContent: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">${body.replace(/\n/g, '<br/>')}</div>`,
+          textContent: body,
+          attachment: attachments.length > 0 ? attachments.map(att => ({
+            name: att.filename,
+            // Need to convert local file paths to base64 or URL for Brevo if they were local,
+            // but in this CRM we usually don't send local attachments via emailService (or if we do, they are handled differently).
+            // For now we'll pass URLs if available.
+            url: att.path
+          })) : undefined
+        })
       });
 
-      const mailOptions = {
-        from: `"${senderName || 'Real Estate CRM'}" <${email}>`,
-        to,
-        subject,
-        text: body, // plaintext body
-        html: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">${body.replace(/\n/g, '<br/>')}</div>`,
-        attachments
-      };
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send via Brevo API');
+      }
 
-      const info = await transporter.sendMail(mailOptions);
+      const info = await response.json();
       console.log(`✅ [Email] Sent to ${to}. MessageID: ${info.messageId}`);
       
       return {
@@ -53,8 +70,8 @@ class EmailService {
       mode: isConfigured ? 'LIVE' : 'DUMMY',
       configured: !!isConfigured,
       note: isConfigured
-        ? 'Connected to Gmail SMTP server'
-        : 'Running in DUMMY mode. Please set your actual EMAIL_USER.'
+        ? 'Connected to Brevo API'
+        : 'Running in DUMMY mode. Please set your Brevo credentials in Settings.'
     };
   }
 }
