@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
     }
     
     // Enforce data isolation: All users (including admins) only see their own data
-    query.created_by = req.session.user?.id;
+    query.created_by = req.user?.id;
 
     if (payment_status && payment_status !== 'All') {
       query.payment_status = payment_status;
@@ -83,7 +83,7 @@ router.post('/', async (req, res) => {
     const property = await Property.create({
       ...req.body,
       is_data_working: req.body.is_data_working === true,
-      created_by: req.session.user?.id
+      created_by: req.user?.id
     });
 
     if (req.body.payment_schedule && Array.isArray(req.body.payment_schedule) && req.body.payment_schedule.length > 0) {
