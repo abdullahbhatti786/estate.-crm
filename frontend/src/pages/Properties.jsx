@@ -326,7 +326,7 @@ export default function Properties() {
         const isAllPaid = paid === total;
         return (
           <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium border ${isAllPaid ? 'bg-success/10 text-success border-success/20' : 'bg-warning/10 text-warning border-warning/20'}`}>
-            {paid} / {total} Paid
+            {isAllPaid ? 'Paid' : `${paid} / ${total} Paid`}
           </span>
         );
       }

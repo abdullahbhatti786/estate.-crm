@@ -36,12 +36,12 @@ router.get('/stats', async (req, res) => {
       lease_end: { $gte: new Date() }
     });
 
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    const ninetyDaysFromNow = new Date();
+    ninetyDaysFromNow.setDate(ninetyDaysFromNow.getDate() + 90);
     
     const expiringSoonRaw = await Property.find({
       ...propQuery,
-      lease_end: { $gte: new Date(), $lte: thirtyDaysFromNow }
+      lease_end: { $gte: new Date(), $lte: ninetyDaysFromNow }
     });
 
     const expiringSoon = expiringSoonRaw.map(p => ({
@@ -64,9 +64,13 @@ router.get('/stats', async (req, res) => {
 
     // Get Upcoming Payments
     const propertyIds = (await Property.find(propQuery).select('_id')).map(p => p._id);
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
     const upcomingPaymentsRaw = await PaymentInstallment.find({
       property_id: { $in: propertyIds },
-      status: { $in: ['Due', 'Overdue', 'Pending'] }
+      status: { $in: ['Due', 'Overdue', 'Pending'] },
+      due_date: { $lte: thirtyDaysFromNow }
     })
     .populate('property_id', 'apartment_unit tenant_name owner_name')
     .sort({ due_date: 1 });
@@ -112,13 +116,13 @@ router.get('/notifications', async (req, res) => {
     leadQuery.created_by = userId;
     propQuery.created_by = userId;
 
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    const ninetyDaysFromNow = new Date();
+    ninetyDaysFromNow.setDate(ninetyDaysFromNow.getDate() + 90);
 
     // 1. Expiry Notifications
     const expiringSoon = await Property.find({
       ...propQuery,
-      lease_end: { $gte: new Date(), $lte: thirtyDaysFromNow }
+      lease_end: { $gte: new Date(), $lte: ninetyDaysFromNow }
     });
     
     expiringSoon.forEach(p => {

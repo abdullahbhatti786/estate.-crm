@@ -90,7 +90,7 @@ router.post('/', async (req, res) => {
       const installments = req.body.payment_schedule.map(p => ({
         property_id: property._id,
         amount: p.amount || property.rent_amount,
-        due_date: new Date(p.date || new Date()),
+        due_date: new Date(p.due_date || new Date()),
         payment_mode: p.mode || 'Cheque',
         status: p.status || 'Due'
       }));
@@ -115,7 +115,7 @@ router.put('/:id', async (req, res) => {
         const installments = req.body.payment_schedule.map(p => ({
           property_id: property._id,
           amount: p.amount || property.rent_amount,
-          due_date: new Date(p.date || new Date()),
+          due_date: new Date(p.due_date || new Date()),
           payment_mode: p.mode || 'Cheque',
           status: p.status || 'Due'
         }));
