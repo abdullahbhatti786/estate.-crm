@@ -138,6 +138,9 @@ router.get('/notifications', async (req, res) => {
     });
 
     // 2. Pending Payments
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    
     const propertyIds = (await Property.find(propQuery).select('_id')).map(p => p._id);
     const pendingPayments = await PaymentInstallment.find({
       property_id: { $in: propertyIds },
